@@ -196,8 +196,8 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Po
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please review our [CONTRIBUTING.md](https://www.google.com/search?q=CONTRIBUTING.md) file for more details regarding our Git branching patterns, naming conventions, and standalone frontend structure rules.
+Contributions are welcome! Please review our [CONTRIBUTING.md](CONTRIBUTING.md) file for more details regarding our Git branching patterns, naming conventions, and standalone frontend structure rules.
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
