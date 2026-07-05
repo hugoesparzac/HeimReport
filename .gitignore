@@ -1,0 +1,203 @@
+# ------------------------------------------------------------------------------
+# Build Results
+# ------------------------------------------------------------------------------
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+PublishProfiles/
+publish/
+*.PublishSettings
+
+# ------------------------------------------------------------------------------
+# Development Environments (IDEs)
+# ------------------------------------------------------------------------------
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.vsp
+*.vspx
+*.sap
+*.psess
+*.dbmdl
+*.jfm
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.code-workspace
+.vscode-test/
+
+# JetBrains Rider / IntelliJ
+.idea/
+*.sln.iml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# ------------------------------------------------------------------------------
+# Packages & Dependencies
+# ------------------------------------------------------------------------------
+# NuGet
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+.nuget/
+
+# Front-end (If using MVC, Razor Pages, or integrated SPAs)
+node_modules/
+jspm_packages/
+.npm/
+
+# ------------------------------------------------------------------------------
+# Testing & Coverage
+# ------------------------------------------------------------------------------
+TestResults/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.binlog
+
+# Coverage Tools
+OpenCover/
+coverage.xml
+coverage/
+*.coverage
+*.coveragexml
+.dotCover/
+.axoCover/*
+.nyc_output/
+
+# ------------------------------------------------------------------------------
+# Configuration, Local Environment & Secrets (Security)
+# ------------------------------------------------------------------------------
+secrets.json
+local.settings.json
+.env
+.env.local
+.env.*.local
+*.local.*
+*.config.local
+appsettings.Production.json
+
+# Local certificates
+*.pfx
+*.pem
+*.cer
+*.crt
+*.key
+
+# Azure Pubxml
+*.azurePubxml
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
+
+# dotnet-watch tool
+.dotnet-suggest-sentinel-*
+
+# ------------------------------------------------------------------------------
+# Logs, Temporaries & Cache
+# ------------------------------------------------------------------------------
+[Ll]og/
+[Ll]ogs/
+*.log
+npm-debug.log*
+npm-error.log*
+tye-debug.log
+
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# ------------------------------------------------------------------------------
+# Local Databases
+# ------------------------------------------------------------------------------
+healthchecksdb
+*.db
+*.mdb
+*.sqlite
+*.sqlite3
+*.ldf
+*.mdf
+
+# ------------------------------------------------------------------------------
+# Docker, Kubernetes & Cloud Tools (.NET Aspire / Tye)
+# ------------------------------------------------------------------------------
+docker-compose.override.yml
+.kube/
+.tye/
+.aspire/
+
+# ------------------------------------------------------------------------------
+# Operating System Files
+# ------------------------------------------------------------------------------
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Linux
+.directory
+.Trash-*
+
+# ------------------------------------------------------------------------------
+# Angular / Frontend
+# ------------------------------------------------------------------------------
+
+# Build output & Cache
+**/dist/
+**/.angular/
+**/out-tsc/
+**/.sass-cache/
+**/bazel-out/
+
+# Node & Logs
+**/node_modules/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Environment overrides
+**/src/environments/environment.local.ts
+
+# E2E Testing (Cypress / Playwright)
+cypress/videos/
+cypress/screenshots/
+playwright-report/
+test-results/
+.vite/
+
+# Local AI tools cache/config
+.gemini/
