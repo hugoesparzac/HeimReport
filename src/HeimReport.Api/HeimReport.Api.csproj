@@ -17,4 +17,13 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Entities\" />
+    <Folder Include="DTOs\" />
+    <Folder Include="Mappers\" />
+    <Folder Include="Repositories\" />
+    <Folder Include="Utils\" />
+    <Folder Include="NewFolder\" />
+  </ItemGroup>
+
 </Project>
