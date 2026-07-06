@@ -13,7 +13,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.FirstName)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(50);
         builder.Property(x => x.LastName)
             .IsRequired()
             .HasMaxLength(100);
@@ -42,9 +42,9 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(x => x.Role)
             .IsRequired();
         builder.Property(x => x.Username)
-            .HasMaxLength(255);
+            .HasMaxLength(50);
         builder.Property(x => x.NormalizedUsername)
-            .HasMaxLength(255);
+            .HasMaxLength(50);
         builder.HasIndex(x => x.NormalizedEmail)
             .IsUnique();
         builder.HasIndex(x => new { x.NationalId, x.CountryId })

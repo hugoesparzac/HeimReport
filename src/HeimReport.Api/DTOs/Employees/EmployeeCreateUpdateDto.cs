@@ -6,13 +6,13 @@ namespace HeimReport.Api.DTOs.Employees;
 public record EmployeeCreateUpdateDto
 {
     [Required(ErrorMessage = "First Name is required")]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string FirstName { get; init; }
     
     [Required(ErrorMessage = "Last Name is required")]
     [MaxLength(100)]
     public required string LastName { get; init; }
-    
+
     [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid email format")]
     [MaxLength(100)]
