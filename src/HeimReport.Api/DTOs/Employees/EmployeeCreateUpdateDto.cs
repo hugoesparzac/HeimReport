@@ -31,6 +31,9 @@ public record EmployeeCreateUpdateDto
     public DateTime? ContractEndDate { get; init; }
     public EmployeeStatus Status { get; init; }
     
+    [Required(ErrorMessage = "System Role is required")]
+    public required SystemRole Role { get; init; }
+    
     [Required]
     public required int CountryId { get; init; }
     
