@@ -21,6 +21,7 @@ public class Employee
     public Department Department { get; set; } = null!;
     public required int PositionId { get; set; }
     public Position Position { get; set; } = null!;
+    public SystemRole Role { get; set; } = SystemRole.Employee;
     public int? ManagerId { get; set; }
     public Employee? Manager { get; set; }
     public string? Username { get; set; }

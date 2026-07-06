@@ -39,6 +39,8 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .IsRequired();
         builder.Property(x => x.PositionId)
             .IsRequired();
+        builder.Property(x => x.Role)
+            .IsRequired();
         builder.Property(x => x.Username)
             .HasMaxLength(255);
         builder.Property(x => x.NormalizedUsername)
