@@ -15,16 +15,12 @@ public record EmployeeResponseDto
     public DateTime? TerminationDate { get; init; }
     public EmployeeStatus Status { get; init; }
     public SystemRole Role { get; init; }
-    
     public int CountryId { get; init; }
-    public string CountryName { get; init; } = string.Empty;
-    
+    public required string CountryName { get; init; }
     public int DepartmentId { get; init; }
-    public string DepartmentName { get; init; } = string.Empty;
-    
+    public required string DepartmentName { get; init; }
     public int PositionId { get; init; }
-    public string PositionTitle { get; init; } = string.Empty;
-    
+    public required string PositionTitle { get; init; }
     public int? ManagerId { get; init; }
     public string? ManagerFullName { get; init; }
 }
