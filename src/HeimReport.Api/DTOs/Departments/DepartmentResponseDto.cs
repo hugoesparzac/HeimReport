@@ -1,6 +1,3 @@
 namespace HeimReport.Api.DTOs.Departments;
 
-public record DepartmentResponseDto(
-    int Id,
-    string Name
-);
+public record DepartmentResponseDto(int Id, string Name);
