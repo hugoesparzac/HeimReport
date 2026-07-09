@@ -39,33 +39,33 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .IsRequired();
         builder.Property(x => x.PositionId)
             .IsRequired();
-        builder.Property(x => x.Role)
+        builder.Property(x => x.CreatedAt)
             .IsRequired();
-        builder.Property(x => x.Username)
-            .HasMaxLength(50);
-        builder.Property(x => x.NormalizedUsername)
-            .HasMaxLength(50);
+        
         builder.HasIndex(x => x.NormalizedEmail)
             .IsUnique();
         builder.HasIndex(x => new { x.NationalId, x.CountryId })
             .IsUnique();
-        builder.HasIndex(x => x.NormalizedUsername)
-            .IsUnique()
-            .HasFilter("\"NormalizedUsername\" IS NOT NULL");
-        builder.HasOne(p => p.Country)
+        builder.HasIndex(x => x.Status);
+        builder.HasIndex(x => x.DepartmentId);
+        builder.HasIndex(x => x.PositionId);
+        builder.HasIndex(x => x.ManagerId);
+        builder.HasIndex(x => x.HireDate);
+        
+        builder.HasOne(x => x.Country)
             .WithMany()
-            .HasForeignKey(p => p.CountryId)
+            .HasForeignKey(x => x.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(p => p.Department)
+        builder.HasOne(x => x.Department)
             .WithMany()
-            .HasForeignKey(p => p.DepartmentId)
+            .HasForeignKey(x => x.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(p => p.Position)
+        builder.HasOne(x => x.Position)
             .WithMany()
-            .HasForeignKey(p => p.PositionId)
+            .HasForeignKey(x => x.PositionId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Manager)
-            .WithMany(m => m.DirectReports)
+            .WithMany(x => x.DirectReports)
             .HasForeignKey(x => x.ManagerId)
             .OnDelete(DeleteBehavior.Restrict);
     }
