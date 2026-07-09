@@ -1,7 +1,5 @@
 using HeimReport.Api.Enums;
-
 namespace HeimReport.Api.DTOs.Employees;
-
 public record EmployeeResponseDto
 {
     public int Id { get; init; }
@@ -14,7 +12,6 @@ public record EmployeeResponseDto
     public DateTime? ContractEndDate { get; init; }
     public DateTime? TerminationDate { get; init; }
     public EmployeeStatus Status { get; init; }
-    public SystemRole Role { get; init; }
     public int CountryId { get; init; }
     public required string CountryName { get; init; }
     public int DepartmentId { get; init; }
