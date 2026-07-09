@@ -16,11 +16,11 @@ public class Employee
     public DateTime? TerminationDate { get; set; }
     public EmployeeStatus Status { get; set; }
     public required int CountryId { get; set; }
-    public required Country Country { get; set; }
+    public Country? Country { get; set; }
     public required int DepartmentId { get; set; }
-    public required Department Department { get; set; }
+    public Department? Department { get; set; }
     public required int PositionId { get; set; }
-    public required Position Position { get; set; }
+    public Position? Position { get; set; }
     public int? ManagerId { get; set; }
     public Employee? Manager { get; set; }
     public ICollection<Employee>? DirectReports { get; set; }

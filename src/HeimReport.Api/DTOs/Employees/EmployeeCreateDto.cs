@@ -1,8 +1,6 @@
 using HeimReport.Api.Enums;
-
 namespace HeimReport.Api.DTOs.Employees;
-
-public record EmployeeCreateUpdateDto
+public record EmployeeCreateDto
 {
     public required string FirstName { get; init; }
     public required string LastName { get; init; }
@@ -11,8 +9,6 @@ public record EmployeeCreateUpdateDto
     public required DateTime HireDate { get; init; }
     public required ContractType ContractType { get; init; }
     public DateTime? ContractEndDate { get; init; }
-    public EmployeeStatus Status { get; init; }
-    public required SystemRole Role { get; init; }
     public required int CountryId { get; init; }
     public required int DepartmentId { get; init; }
     public required int PositionId { get; init; }

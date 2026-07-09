@@ -6,7 +6,7 @@ public class User
 {
     public int Id { get; set; }
     public required int EmployeeId { get; set; }
-    public required Employee Employee { get; set; }
+    public Employee? Employee { get; set; }
     public required string Username { get; set; }
     public required string NormalizedUsername { get; set; }
     public required string PasswordHash { get; set; }
