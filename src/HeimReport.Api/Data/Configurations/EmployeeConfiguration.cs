@@ -32,7 +32,8 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .IsRequired();
         builder.Property(x => x.Status)
             .IsRequired()
-            .HasDefaultValue(EmployeeStatus.Active);
+            .HasDefaultValue(EmployeeStatus.Active)
+            .HasSentinel(EmployeeStatus.Active);
         builder.Property(x => x.CountryId)
             .IsRequired();
         builder.Property(x => x.DepartmentId)
