@@ -16,16 +16,13 @@ public class Employee
     public DateTime? TerminationDate { get; set; }
     public EmployeeStatus Status { get; set; }
     public required int CountryId { get; set; }
-    public Country Country { get; set; } = null!;
+    public required Country Country { get; set; }
     public required int DepartmentId { get; set; }
-    public Department Department { get; set; } = null!;
+    public required Department Department { get; set; }
     public required int PositionId { get; set; }
-    public Position Position { get; set; } = null!;
-    public SystemRole Role { get; set; } = SystemRole.Employee;
+    public required Position Position { get; set; }
     public int? ManagerId { get; set; }
     public Employee? Manager { get; set; }
-    public string? Username { get; set; }
-    public string? NormalizedUsername { get; set; }
-    public string? PasswordHash { get; set; }
-    public ICollection<Employee> DirectReports { get; set; } = new List<Employee>();
+    public ICollection<Employee>? DirectReports { get; set; }
+    public required DateTime CreatedAt { get; set; }
 }
