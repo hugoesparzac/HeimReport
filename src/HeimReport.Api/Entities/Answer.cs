@@ -9,7 +9,8 @@ public class Answer
     public Question? Question { get; set; }
     public string? RawText { get; set; }
     public string? NormalizedText { get; set; }
-    public decimal? SentimentScore { get; set; }
+    public float? SentimentScore { get; set; }
     public int? ChatMessageId { get; set; }
+    public ChatMessage? ChatMessage { get; set; }
     public required DateTime AnsweredAt { get; set; }
 }

@@ -10,7 +10,7 @@ public class ChatMessage
     public required ChatMessageSender Sender { get; set; }
     public required string Content { get; set; }
     public required DateTime SentAt { get; set; }
-    public decimal? SentimentScore { get; set; }
-    public required int QuestionId { get; set; }
+    public float? SentimentScore { get; set; }
+    public int? QuestionId { get; set; }
     public Question? Question { get; set; }
 }

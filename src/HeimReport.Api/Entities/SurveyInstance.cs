@@ -9,9 +9,9 @@ public class SurveyInstance
     public Employee? Employee { get; set; }
     public required int SurveyTemplateId { get; set; }
     public SurveyTemplate? SurveyTemplate { get; set; }
-    public required DateTime ScheduleDate { get; set; }
+    public required DateTime ScheduledDate { get; set; }
     public DateTime? DueDate { get; set; }
     public required SurveyInstanceStatus Status { get; set; }
-    public DateTime? ComplatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
     public required SurveyChannel Channel { get; set; }
 }
