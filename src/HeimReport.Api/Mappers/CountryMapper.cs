@@ -7,7 +7,11 @@ public static class CountryMapper
 {
     public static CountryResponseDto ToResponseDto(this Country country)
     {
-        return new CountryResponseDto(country.Id,  country.Name);
+        return new CountryResponseDto
+        {
+            Id = country.Id,
+            Name = country.Name
+        };
     }
 
     public static Country ToEntity(this CountryCreateUpdateDto dto)

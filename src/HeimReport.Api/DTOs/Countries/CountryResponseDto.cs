@@ -1,3 +1,7 @@
 namespace HeimReport.Api.DTOs.Countries;
 
-public record CountryResponseDto(int Id, string Name);
+public record CountryResponseDto
+{
+    public int Id { get; init; }
+    public required string Name { get; init; }
+}

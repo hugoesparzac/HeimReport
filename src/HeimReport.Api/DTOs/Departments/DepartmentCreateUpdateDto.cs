@@ -1,3 +1,6 @@
 namespace HeimReport.Api.DTOs.Departments;
 
-public record DepartmentCreateUpdateDto(string Name);
+public record DepartmentCreateUpdateDto
+{
+    public required string Name { get; init; }
+}
