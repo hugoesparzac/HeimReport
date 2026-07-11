@@ -12,7 +12,7 @@ public class User
     public required string PasswordHash { get; set; }
     public required SystemRole Role { get; set; }
     public required bool IsEmailVerified { get; set; }
-    public string? EmailVerificationToken { get; set; }
+    public string? EmailVerificationTokenHash { get; set; }
     public DateTime? EmailVerificationTokenExpiresAt { get; set; }
     public required bool IsActive { get; set; }
     public required DateTime CreatedAt { get; set; }
