@@ -3,9 +3,9 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using HeimReport.Api.Data;
 using HeimReport.Api.ExceptionHandlers;
+using HeimReport.Api.Extensions;
 using HeimReport.Api.Security;
 using HeimReport.Api.Validators.Auth;
-using HeimReport.Api.Validators.Employees;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +20,8 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddRepositories();
 
 builder.Services.AddValidatorsFromAssemblyContaining<UserRegistrationDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
