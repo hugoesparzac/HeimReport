@@ -7,12 +7,13 @@ public static class PositionMapper
 {
     public static PositionResponseDto ToResponseDto(this Position position)
     {
-        return new PositionResponseDto(
-            position.Id, 
-            position.Title, 
-            position.CareerLevel, 
-            position.IsCritical
-        );
+        return new PositionResponseDto
+        {
+            Id = position.Id,
+            Title = position.Title,
+            CareerLevel = position.CareerLevel,
+            IsCritical = position.IsCritical
+        };
     }
     
     public static Position ToEntity(this PositionCreateUpdateDto dto)
