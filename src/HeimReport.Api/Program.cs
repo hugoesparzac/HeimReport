@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using HeimReport.Api.Data;
+using HeimReport.Api.Email;
 using HeimReport.Api.ExceptionHandlers;
 using HeimReport.Api.Extensions;
 using HeimReport.Api.Validators.Auth;
@@ -20,6 +21,8 @@ builder.Services.AddCorsPolicy(builder.Configuration);
 
 builder.Services.AddValidatorsFromAssemblyContaining<UserRegistrationDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
+
+builder.Services.AddEmailSender(builder.Configuration);
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
