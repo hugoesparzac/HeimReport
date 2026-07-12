@@ -4,6 +4,7 @@ using HeimReport.Api.Data;
 using HeimReport.Api.Email;
 using HeimReport.Api.ExceptionHandlers;
 using HeimReport.Api.Extensions;
+using HeimReport.Api.Security;
 using HeimReport.Api.Validators.Auth;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddRepositories();
 builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddSecurityServices();
 builder.Services.AddCorsPolicy(builder.Configuration);
 
 builder.Services.AddValidatorsFromAssemblyContaining<UserRegistrationDtoValidator>();
