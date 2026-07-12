@@ -14,7 +14,7 @@ public static class JwtServiceExtensions
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateDataAnnotations()
-            .ValidateOnStart(); // falla al arrancar la app si falta algo, no en runtime
+            .ValidateOnStart();
 
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
 
