@@ -17,4 +17,5 @@ public class User
     public required bool IsActive { get; set; }
     public required DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+    public required Language PreferredLanguage { get; set; }
 }
