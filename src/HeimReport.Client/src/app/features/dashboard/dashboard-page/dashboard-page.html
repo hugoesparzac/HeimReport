@@ -1,0 +1,53 @@
+<app-sidebar />
+<app-topbar />
+
+<main class="relative ml-24 mt-16 p-8 w-full min-h-screen bg-[#E7ECF3] overflow-hidden">
+
+  <div class="absolute top-[-10%] left-[20%] h-125 w-125 rounded-full bg-blue-400/10 blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-[-10%] right-[-5%] h-150 w-150 rounded-full bg-indigo-300/15 blur-[140px] pointer-events-none"></div>
+  
+  <div class="relative z-10 mb-8 flex justify-between items-end">
+    <div>
+      <h2 class="text-4xl font-bold tracking-tight text-[#0F172A] mb-2">Análisis Predictivo Global</h2>
+      <p class="text-[15px] text-[#6b7686]">Visión integral de riesgos de deserción y factores clave a nivel organizacional.</p>
+    </div>
+    <button class="bg-[#0F172A] text-white text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-black transition-colors flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">download</span>
+      Exportar Reporte
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <app-metric-card />
+
+    <div class="bg-[#F8FAFC] rounded-3xl p-6 border border-white shadow-[0_10px_30px_-12px_rgba(13,13,13,0.08)] flex flex-col justify-between">
+      <div class="flex items-start justify-between mb-2">
+        <span class="text-xs tracking-wide uppercase text-[#6b7686]/80 font-semibold">Índice de Precisión del Modelo</span>
+        <span class="material-symbols-outlined text-[#0F172A]">check_circle</span>
+      </div>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-[48px] leading-[56px] tracking-[-0.02em] text-[#0F172A] font-bold">92%</span>
+        <span class="text-xs text-[#6b7686]">Últimos 30 días</span>
+      </div>
+    </div>
+
+    <div class="bg-[#F8FAFC] rounded-3xl p-6 border border-white shadow-[0_10px_30px_-12px_rgba(13,13,13,0.08)] flex flex-col justify-between">
+      <div class="flex items-start justify-between mb-2">
+        <span class="text-xs tracking-wide uppercase text-[#6b7686]/80 font-semibold">Alertas Críticas Activas</span>
+        <span class="material-symbols-outlined text-[#ba1a1a]">notifications_active</span>
+      </div>
+      <div class="flex items-baseline gap-2 mt-2">
+        <span class="text-[48px] leading-[56px] tracking-[-0.02em] text-[#0F172A] font-bold">24</span>
+        <span class="text-xs text-[#6b7686]">Requieren atención inmediata</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-4">
+    <app-churn-drivers class="col-span-12 xl:col-span-4" />
+    <app-journey-flow class="col-span-12 xl:col-span-8" />
+    <app-risk-distribution class="col-span-12 xl:col-span-6" />
+    <app-trend-chart class="col-span-12 xl:col-span-6" />
+    <app-employees-at-risk-table class="col-span-12" />
+  </div>
+</main>
