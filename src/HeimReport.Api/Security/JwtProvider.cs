@@ -2,10 +2,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using HeimReport.Api.Entities;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 namespace HeimReport.Api.Security;
-public sealed class JwtProvider(IConfiguration configuration) : IJwtProvider
+
+public sealed class JwtProvider(IOptions<JwtOptions> jwtOptions) : IJwtProvider
 {
+    private readonly JwtOptions _options = jwtOptions.Value;
+
     public string GenerateToken(User user)
     {
         if (user.Employee is null)
@@ -14,11 +18,6 @@ public sealed class JwtProvider(IConfiguration configuration) : IJwtProvider
                 $"Cannot generate token: User with Id {user.Id} was loaded without its related Employee. " +
                 $"Ensure the query includes .Include(u => u.Employee).");
         }
-
-        string secretKey = configuration["Jwt:Key"]!;
-        string issuer = configuration["Jwt:Issuer"]!;
-        string audience = configuration["Jwt:Audience"]!;
-        int expirationMinutes = int.Parse(configuration["Jwt:ExpirationInMinutes"]!);
 
         var claims = new[]
         {
@@ -30,14 +29,14 @@ public sealed class JwtProvider(IConfiguration configuration) : IJwtProvider
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
         var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(expirationMinutes),
-            Issuer = issuer,
-            Audience = audience,
+            Expires = DateTime.UtcNow.AddMinutes(_options.ExpirationInMinutes),
+            Issuer = _options.Issuer,
+            Audience = _options.Audience,
             SigningCredentials = credentials
         };
 

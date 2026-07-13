@@ -57,10 +57,12 @@ public class GlobalExceptionHandler(IWebHostEnvironment env, ILogger<GlobalExcep
                 break;
 
             case InvalidOperationException invalidOperationException:
-                logger.LogWarning(invalidOperationException, "Bad request on {Path}", httpContext.Request.Path);
-                problemDetails.Status = StatusCodes.Status400BadRequest;
-                problemDetails.Title = "Bad Request";
-                problemDetails.Detail = invalidOperationException.Message;
+                logger.LogError(invalidOperationException, "Invalid operation on {Path}", httpContext.Request.Path);
+                problemDetails.Status = StatusCodes.Status500InternalServerError;
+                problemDetails.Title = "Internal Server Error";
+                problemDetails.Detail = env.IsDevelopment()
+                    ? invalidOperationException.Message
+                    : "An internal error has occurred on the server.";
                 break;
 
             case UnauthorizedAccessException unauthorizedAccessException:
@@ -75,6 +77,13 @@ public class GlobalExceptionHandler(IWebHostEnvironment env, ILogger<GlobalExcep
                 problemDetails.Status = StatusCodes.Status404NotFound;
                 problemDetails.Title = "Resource Not Found";
                 problemDetails.Detail = notFoundException.Message;
+                break;
+            
+            case DomainException domainException:
+                logger.LogWarning("Domain rule violated on {Path}: {Message}", httpContext.Request.Path, domainException.Message);
+                problemDetails.Status = StatusCodes.Status400BadRequest;
+                problemDetails.Title = "Business Rule Violation";
+                problemDetails.Detail = domainException.Message;
                 break;
 
             case OperationCanceledException:

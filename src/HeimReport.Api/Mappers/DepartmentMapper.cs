@@ -7,7 +7,11 @@ public static class DepartmentMapper
 {
     public static DepartmentResponseDto ToResponseDto(this Department department)
     {
-        return new DepartmentResponseDto(department.Id, department.Name);
+        return new DepartmentResponseDto
+        {
+            Id = department.Id,
+            Name = department.Name
+        };
     }
 
     public static Department ToEntity(this DepartmentCreateUpdateDto dto)

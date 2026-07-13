@@ -26,7 +26,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.IsEmailVerified)
             .IsRequired()
             .HasDefaultValue(false);
-        builder.Property(x => x.EmailVerificationToken)
+        builder.Property(x => x.EmailVerificationTokenHash)
             .HasMaxLength(255);
         builder.Property(x => x.IsActive)
             .IsRequired()
