@@ -8,5 +8,9 @@ public interface IRefreshTokenRepository : IRepository<RefreshToken>
         string tokenHash,
         CancellationToken cancellationToken = default);
 
+    Task<List<RefreshToken>> GetActiveByUserIdAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
+
     void Revoke(RefreshToken token);
 }

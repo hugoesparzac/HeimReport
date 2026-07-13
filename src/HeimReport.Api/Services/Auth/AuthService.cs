@@ -71,12 +71,9 @@ public sealed partial class AuthService(
     public async Task VerifyEmailAsync(string rawToken, CancellationToken cancellationToken = default)
     {
         var tokenHash = tokenHasher.Hash(rawToken);
-        var user = await userRepository.GetByEmailVerificationTokenHashAsync(tokenHash, cancellationToken);
 
-        if (user is null)
-        {
-            throw new DomainException("This verification link is invalid or has already been used.");
-        }
+        var user = await userRepository.GetByEmailVerificationTokenHashAsync(tokenHash, cancellationToken)
+            ?? throw new DomainException("This verification link is invalid or has already been used.");
 
         if (user.EmailVerificationTokenExpiresAt is null || user.EmailVerificationTokenExpiresAt < DateTime.UtcNow)
         {
@@ -140,6 +137,85 @@ public sealed partial class AuthService(
         };
     }
 
+    public async Task<TokenResponseDto> RefreshAsync(string rawRefreshToken, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = tokenHasher.Hash(rawRefreshToken);
+
+        var storedToken = await refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken)
+            ?? throw new DomainException("Invalid refresh token.");
+
+        if (storedToken.RevokedAt is not null)
+        {
+            LogRevokedTokenReuseDetected(storedToken.UserId);
+
+            var activeTokens = await refreshTokenRepository.GetActiveByUserIdAsync(storedToken.UserId, cancellationToken);
+            foreach (var token in activeTokens)
+            {
+                refreshTokenRepository.Revoke(token);
+            }
+            await refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
+            throw new DomainException("This session is no longer valid. Please log in again.");
+        }
+
+        if (storedToken.ExpiresAt < DateTime.UtcNow)
+        {
+            throw new DomainException("This session has expired. Please log in again.");
+        }
+
+        if (storedToken.User?.Employee is null)
+        {
+            throw new InvalidOperationException(
+                $"Cannot generate token: RefreshToken with Id {storedToken.Id} was loaded without its related User/Employee. " +
+                $"Ensure the query includes .Include(rt => rt.User).ThenInclude(u => u.Employee).");
+        }
+
+        var newAccessToken = jwtProvider.GenerateToken(storedToken.User);
+        var newRawRefreshToken = tokenHasher.GenerateRawToken();
+        var newTokenHash = tokenHasher.Hash(newRawRefreshToken);
+        var newExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationInDays);
+
+        var newRefreshToken = new RefreshToken
+        {
+            UserId = storedToken.UserId,
+            TokenHash = newTokenHash,
+            ExpiresAt = newExpiresAt,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await refreshTokenRepository.AddAsync(newRefreshToken, cancellationToken);
+
+        storedToken.ReplacedByTokenHash = newTokenHash;
+        refreshTokenRepository.Revoke(storedToken);
+
+        await refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
+        LogRefreshTokenRotated(storedToken.UserId);
+
+        return new TokenResponseDto
+        {
+            AccessToken = newAccessToken,
+            RefreshToken = newRawRefreshToken,
+            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationInMinutes)
+        };
+    }
+
+    public async Task LogoutAsync(string rawRefreshToken, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = tokenHasher.Hash(rawRefreshToken);
+        var storedToken = await refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+
+        if (storedToken is null || storedToken.RevokedAt is not null)
+        {
+            return;
+        }
+
+        refreshTokenRepository.Revoke(storedToken);
+        await refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
+        LogUserLoggedOut(storedToken.UserId);
+    }
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Registration attempted for an email with no matching active employee: {Email}")]
     private partial void LogNoMatchingEmployeeForRegistration(string email);
 
@@ -157,4 +233,13 @@ public sealed partial class AuthService(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User {UserId} logged in successfully")]
     private partial void LogUserLoggedIn(int userId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Detected reuse of a revoked refresh token for UserId {UserId}. Revoking all active sessions.")]
+    private partial void LogRevokedTokenReuseDetected(int userId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Refresh token rotated successfully for UserId {UserId}")]
+    private partial void LogRefreshTokenRotated(int userId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User {UserId} logged out successfully")]
+    private partial void LogUserLoggedOut(int userId);
 }
