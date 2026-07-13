@@ -1,21 +1,27 @@
 using HeimReport.Api.DTOs.Auth;
 using HeimReport.Api.Email;
+using HeimReport.Api.Entities;
 using HeimReport.Api.Exceptions;
 using HeimReport.Api.Mappers;
 using HeimReport.Api.Repositories.Auth;
 using HeimReport.Api.Repositories.Employees;
 using HeimReport.Api.Security;
+using Microsoft.Extensions.Options;
 
 namespace HeimReport.Api.Services.Auth;
 
-public sealed class AuthService(
+public sealed partial class AuthService(
     IEmployeeRepository employeeRepository,
     IUserRepository userRepository,
+    IRefreshTokenRepository refreshTokenRepository,
     IPasswordHasher passwordHasher,
     ITokenHasher tokenHasher,
+    IJwtProvider jwtProvider,
     IEmailSender emailSender,
+    IOptions<JwtOptions> jwtOptions,
     ILogger<AuthService> logger) : IAuthService
 {
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private static readonly TimeSpan VerificationTokenLifetime = TimeSpan.FromHours(24);
 
     public async Task RegisterAsync(UserRegistrationDto dto, CancellationToken cancellationToken = default)
@@ -25,14 +31,14 @@ public sealed class AuthService(
         var employee = await employeeRepository.GetActiveByNormalizedEmailAsync(normalizedEmail, cancellationToken);
         if (employee is null)
         {
-            logger.LogWarning("Registration attempted for an email with no matching active employee: {Email}", dto.Email);
+            LogNoMatchingEmployeeForRegistration(dto.Email);
             throw new DomainException("Unable to complete registration with the provided information.");
         }
 
         var existingUser = await userRepository.GetByEmployeeIdAsync(employee.Id, cancellationToken);
         if (existingUser is not null)
         {
-            logger.LogWarning("Registration attempted for an employee that already has an account: EmployeeId {EmployeeId}", employee.Id);
+            LogEmployeeAlreadyHasAccount(employee.Id);
             throw new DomainException("Unable to complete registration with the provided information.");
         }
 
@@ -59,7 +65,7 @@ public sealed class AuthService(
             user.PreferredLanguage,
             cancellationToken);
 
-        logger.LogInformation("User registered successfully for EmployeeId {EmployeeId}", employee.Id);
+        LogUserRegistered(employee.Id);
     }
 
     public async Task VerifyEmailAsync(string rawToken, CancellationToken cancellationToken = default)
@@ -80,6 +86,75 @@ public sealed class AuthService(
         user.ConfirmEmailVerification();
         await userRepository.SaveChangesAsync(cancellationToken);
 
-        logger.LogInformation("Email verified successfully for UserId {UserId}", user.Id);
+        LogEmailVerified(user.Id);
     }
+
+    public async Task<TokenResponseDto> LoginAsync(UserLoginDto dto, CancellationToken cancellationToken = default)
+    {
+        var normalizedInput = dto.UsernameOrEmail.Trim().ToUpperInvariant();
+        var user = await userRepository.GetByUsernameOrEmailAsync(normalizedInput, cancellationToken);
+
+        if (user is null || !passwordHasher.Verify(dto.Password, user.PasswordHash))
+        {
+            LogFailedLoginAttempt(dto.UsernameOrEmail);
+            throw new DomainException("Invalid username/email or password.");
+        }
+
+        if (!user.IsActive)
+        {
+            throw new DomainException("This account has been deactivated. Please contact support.");
+        }
+
+        if (!user.IsEmailVerified)
+        {
+            throw new DomainException("Please verify your email address before logging in.");
+        }
+
+        var accessToken = jwtProvider.GenerateToken(user);
+
+        var rawRefreshToken = tokenHasher.GenerateRawToken();
+        var refreshTokenHash = tokenHasher.Hash(rawRefreshToken);
+        var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationInDays);
+
+        RefreshToken refreshToken = new()
+        {
+            UserId = user.Id,
+            TokenHash = refreshTokenHash,
+            ExpiresAt = refreshTokenExpiresAt,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
+
+        user.RecordLogin();
+
+        await refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
+        LogUserLoggedIn(user.Id);
+
+        return new TokenResponseDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = rawRefreshToken,
+            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationInMinutes)
+        };
+    }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Registration attempted for an email with no matching active employee: {Email}")]
+    private partial void LogNoMatchingEmployeeForRegistration(string email);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Registration attempted for an employee that already has an account: EmployeeId {EmployeeId}")]
+    private partial void LogEmployeeAlreadyHasAccount(int employeeId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User registered successfully for EmployeeId {EmployeeId}")]
+    private partial void LogUserRegistered(int employeeId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Email verified successfully for UserId {UserId}")]
+    private partial void LogEmailVerified(int userId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed login attempt for input: {Input}")]
+    private partial void LogFailedLoginAttempt(string input);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User {UserId} logged in successfully")]
+    private partial void LogUserLoggedIn(int userId);
 }
