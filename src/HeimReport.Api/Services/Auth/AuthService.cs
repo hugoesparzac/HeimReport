@@ -216,6 +216,38 @@ public sealed partial class AuthService(
         LogUserLoggedOut(storedToken.UserId);
     }
 
+    public async Task ResendVerificationAsync(ResendEmailVerificationDto dto, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = dto.Email.Trim().ToUpperInvariant();
+        var employee = await employeeRepository.GetActiveByNormalizedEmailAsync(normalizedEmail, cancellationToken);
+
+        if (employee is null)
+        {
+            LogNonMatchingEmailForResend(dto.Email);
+            return;
+        }
+
+        var user = await userRepository.GetByEmployeeIdAsync(employee.Id, cancellationToken);
+        if (user is null || user.IsEmailVerified)
+        {
+            return;
+        }
+
+        var rawToken = tokenHasher.GenerateRawToken();
+        var tokenHash = tokenHasher.Hash(rawToken);
+        user.SetEmailVerificationToken(tokenHash, DateTime.UtcNow.Add(VerificationTokenLifetime));
+
+        await userRepository.SaveChangesAsync(cancellationToken);
+
+        await emailSender.SendEmailVerificationAsync(
+            employee.Email,
+            rawToken,
+            user.PreferredLanguage,
+            cancellationToken);
+
+        LogVerificationEmailResent(employee.Id);
+    }
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Registration attempted for an email with no matching active employee: {Email}")]
     private partial void LogNoMatchingEmployeeForRegistration(string email);
 
@@ -242,4 +274,10 @@ public sealed partial class AuthService(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User {UserId} logged out successfully")]
     private partial void LogUserLoggedOut(int userId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Resend verification requested for a non-matching email: {Email}")]
+    private partial void LogNonMatchingEmailForResend(string email);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Verification email resent for EmployeeId {EmployeeId}")]
+    private partial void LogVerificationEmailResent(int employeeId);
 }

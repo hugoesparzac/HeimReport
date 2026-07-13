@@ -9,4 +9,5 @@ public interface IAuthService
     Task<TokenResponseDto> LoginAsync(UserLoginDto dto, CancellationToken cancellationToken = default);
     Task<TokenResponseDto> RefreshAsync(string rawRefreshToken, CancellationToken cancellationToken = default);
     Task LogoutAsync(string rawRefreshToken, CancellationToken cancellationToken = default);
+    Task ResendVerificationAsync(ResendEmailVerificationDto dto, CancellationToken cancellationToken = default);
 }
