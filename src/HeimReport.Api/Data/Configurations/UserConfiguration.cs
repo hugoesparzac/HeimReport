@@ -1,4 +1,5 @@
 using HeimReport.Api.Entities;
+using HeimReport.Api.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -33,12 +34,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasDefaultValue(true);
         builder.Property(x => x.CreatedAt)
             .IsRequired();
-        
+        builder.Property(x => x.PreferredLanguage)
+            .IsRequired()
+            .HasDefaultValue(Language.English)
+            .HasSentinel(Language.English);
+
         builder.HasIndex(x => x.EmployeeId)
             .IsUnique();
         builder.HasIndex(x => x.NormalizedUsername)
             .IsUnique();
-        
+
         builder.HasOne(x => x.Employee)
             .WithMany()
             .HasForeignKey(x => x.EmployeeId)

@@ -7,7 +7,7 @@ public interface IEmployeeRepository : IRepository<Employee>
 {
     Task<Employee?> GetByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default);
 
-    Task<Employee?> GetActiveByEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task<Employee?> GetActiveByNormalizedEmailAsync(string email, CancellationToken cancellationToken = default);
 
     Task<Employee?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default);
 

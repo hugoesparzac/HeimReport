@@ -17,6 +17,7 @@ public static class UserMapper
             Role = SystemRole.Employee,
             IsEmailVerified = false,
             IsActive = true,
+            PreferredLanguage = dto.PreferredLanguage,
             CreatedAt = DateTime.UtcNow
         };
     }
@@ -30,6 +31,7 @@ public static class UserMapper
             Role = user.Role,
             IsEmailVerified = user.IsEmailVerified,
             IsActive = user.IsActive,
+            PreferredLanguage = user.PreferredLanguage,
             CreatedAt = user.CreatedAt,
             LastLoginAt = user.LastLoginAt
         };
