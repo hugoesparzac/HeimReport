@@ -29,5 +29,8 @@ public class UserRegistrationDtoValidator : AbstractValidator<UserRegistrationDt
         RuleFor(x => x.ConfirmPassword)
             .NotEmpty().WithMessage("Confirm password is required")
             .Equal(x => x.Password).WithMessage("Passwords do not match");
+
+        RuleFor(x => x.PreferredLanguage)
+            .IsInEnum().WithMessage("Invalid preferred language");
     }
 }
