@@ -28,4 +28,12 @@ public class UserRepository(ApplicationDbContext context)
                 user => user.EmailVerificationTokenHash == tokenHash,
                 cancellationToken);
     }
+
+    public async Task<User?> GetByEmployeeIdAsync(
+        int employeeId,
+        CancellationToken cancellationToken = default)
+    {
+        return await Context.Users
+            .FirstOrDefaultAsync(user => user.EmployeeId == employeeId, cancellationToken);
+    }
 }

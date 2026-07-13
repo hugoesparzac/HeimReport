@@ -17,7 +17,7 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
         return await DbSet.FirstOrDefaultAsync(e => e.NormalizedEmail == email, cancellationToken);
     }
 
-    public async Task<Employee?> GetActiveByEmailAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<Employee?> GetActiveByNormalizedEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
         return await DbSet.FirstOrDefaultAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == EmployeeStatus.Active, cancellationToken);
