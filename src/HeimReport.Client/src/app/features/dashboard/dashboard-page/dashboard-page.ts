@@ -1,6 +1,7 @@
 import { Component } from "@angular/core";
-import { SidebarComponent } from './components/sidebar/sidebar';
-import { TopbarComponent } from './components/topbar/topbar';
+import { ButtonComponent } from '../../../shared/components/button/button';
+import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { TopbarComponent } from '../../../shared/components/topbar/topbar';
 import { MetricCardComponent } from './components/metric-card/metric-card';
 import { ChurnDriversComponent } from './components/churn-drivers/churn-drivers';
 import { JourneyFlowComponent } from './components/journey-flow/journey-flow';
@@ -12,7 +13,7 @@ import { EmployeesAtRiskTableComponent } from './components/employees-at-risk-ta
     standalone: true,
     imports: [
     SidebarComponent, TopbarComponent, MetricCardComponent, ChurnDriversComponent,
-    JourneyFlowComponent, RiskDistributionComponent, TrendChartComponent, EmployeesAtRiskTableComponent     ],
+    JourneyFlowComponent, RiskDistributionComponent, TrendChartComponent, EmployeesAtRiskTableComponent, ButtonComponent ],
     templateUrl: "./dashboard-page.html",
     styleUrls: ["./dashboard-page.css"]
 })
