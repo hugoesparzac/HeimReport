@@ -1,3 +1,5 @@
+using HeimReport.Api.Enums;
+
 namespace HeimReport.Api.DTOs.Auth;
 public record UserRegistrationDto
 {
@@ -5,4 +7,5 @@ public record UserRegistrationDto
     public required string Username { get; init; }
     public required string Password { get; init; }
     public required string ConfirmPassword { get; init; }
+    public required Language PreferredLanguage { get; set; }
 }
