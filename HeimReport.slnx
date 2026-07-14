@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/HeimReport.Api.UnitTests/HeimReport.Api.UnitTests.csproj" />
     <Project Path="src/HeimReport.Api/HeimReport.Api.csproj" />
   </Folder>
 </Solution>

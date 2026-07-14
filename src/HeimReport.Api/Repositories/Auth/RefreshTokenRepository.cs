@@ -19,6 +19,15 @@ public class RefreshTokenRepository(ApplicationDbContext context)
                 cancellationToken);
     }
 
+    public async Task<List<RefreshToken>> GetActiveByUserIdAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await Context.RefreshTokens
+            .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow)
+            .ToListAsync(cancellationToken);
+    }
+
     public void Revoke(RefreshToken token)
     {
         token.RevokedAt = DateTime.UtcNow;
