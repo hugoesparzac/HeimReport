@@ -1,6 +1,9 @@
-﻿namespace HeimReport.Api.Repositories.Catalogs.Positions
+﻿using HeimReport.Api.Entities;
+
+namespace HeimReport.Api.Repositories.Catalogs;
+
+public interface IPositionRepository : IRepository<Position>
 {
-    public interface IPositionRepository
-    {
-    }
+    Task<bool> ExistsByNameAsync(string title, CancellationToken cancellationToken = default);
+    Task<bool> IsReferencedByEmployeeAsync(int id, CancellationToken cancellationToken = default);
 }

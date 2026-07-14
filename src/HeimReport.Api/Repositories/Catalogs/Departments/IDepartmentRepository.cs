@@ -1,6 +1,6 @@
 ﻿using HeimReport.Api.Entities;
 
-namespace HeimReport.Api.Repositories.Catalogs.Departments;
+namespace HeimReport.Api.Repositories.Catalogs;
 
 public interface IDepartmentRepository : IRepository<Department>
 {

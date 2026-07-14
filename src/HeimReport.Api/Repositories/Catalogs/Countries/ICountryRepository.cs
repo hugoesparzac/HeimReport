@@ -1,6 +1,6 @@
 ﻿using HeimReport.Api.Entities;
 
-namespace HeimReport.Api.Repositories.Catalogs.Countries;
+namespace HeimReport.Api.Repositories.Catalogs;
 
 public interface ICountryRepository : IRepository<Country>
 {
