@@ -1,0 +1,29 @@
+<app-sidebar />
+<app-topbar />
+
+<app-page-background>
+  <div class="grid grid-cols-12 gap-4 mb-8 items-end">
+  <div class="col-span-12 xl:col-span-8 flex justify-between items-end">
+    <div>
+      <h2 class="text-4xl font-bold tracking-tight text-[#0F172A] mb-2">Empleados</h2>
+      <p class="text-[15px] text-[#6b7686]">Gestiona tu fuerza laboral y analiza la retención.</p>
+    </div>
+    <app-button variant="outline-dark">Ver Info</app-button>
+  </div>
+
+  <div class="col-span-12 xl:col-span-4 flex justify-end items-end">
+    <app-button variant="primary">
+      <span class="material-symbols-outlined text-[20px]">add</span>
+      Nuevo Empleado
+    </app-button>
+  </div>
+</div>
+
+ <div class="grid grid-cols-12 gap-4 items-stretch">
+    <div class="col-span-12 xl:col-span-8 flex flex-col gap-4">
+      <app-workforce-overview-banner />
+      <app-employee-directory-table />
+    </div>
+    <app-top-seniority-panel class="col-span-12 xl:col-span-4" />
+  </div>
+</app-page-background>
