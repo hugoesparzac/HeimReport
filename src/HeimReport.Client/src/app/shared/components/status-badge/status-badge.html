@@ -1,0 +1,13 @@
+<span
+
+  [class]="{
+    'bg-[#dcfce7] text-[#166534]': variant() === 'success',
+    'bg-[#ffe5cc] text-[#b5651d]': variant() === 'warning',
+    'bg-[#ffdad6] text-[#ba1a1a]': variant() === 'danger',
+    'bg-[#dbeafe] text-[#1e40af]': variant() === 'info'
+  }"
+  class="px-2 py-1 rounded-full text-xs font-bold inline-block"
+>
+  {{ label() }}
+
+</span>

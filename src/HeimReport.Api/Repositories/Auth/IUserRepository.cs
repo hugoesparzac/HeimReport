@@ -15,4 +15,8 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetByEmployeeIdAsync(
         int employeeId,
         CancellationToken cancellationToken = default);
+
+    Task<User?> GetByUsernameOrEmailAsync(
+        string normalizedInput,
+        CancellationToken cancellationToken = default);
 }

@@ -36,4 +36,15 @@ public class UserRepository(ApplicationDbContext context)
         return await Context.Users
             .FirstOrDefaultAsync(user => user.EmployeeId == employeeId, cancellationToken);
     }
+
+    public async Task<User?> GetByUsernameOrEmailAsync(
+        string normalizedInput,
+        CancellationToken cancellationToken = default)
+    {
+        return await Context.Users
+            .Include(user => user.Employee)
+            .FirstOrDefaultAsync(
+                user => user.NormalizedUsername == normalizedInput
+                    || user.Employee!.NormalizedEmail == normalizedInput, cancellationToken);
+    }
 }

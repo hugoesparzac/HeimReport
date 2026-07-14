@@ -5,12 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Repositories.Employees;
 
-public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
+public class EmployeeRepository(ApplicationDbContext context) : Repository<Employee>(context), IEmployeeRepository
 {
-    public EmployeeRepository(ApplicationDbContext context) : base(context)
-    {
-    }
-
     public async Task<Employee?> GetByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
     {
         var email = normalizedEmail.Trim().ToLowerInvariant();
