@@ -1,4 +1,7 @@
+using HeimReport.Api.DTOs.Auth;
 using HeimReport.Api.Email;
+using HeimReport.Api.Entities;
+using HeimReport.Api.Enums;
 using HeimReport.Api.Repositories.Auth;
 using HeimReport.Api.Repositories.Employees;
 using HeimReport.Api.Security;
@@ -6,6 +9,7 @@ using HeimReport.Api.Services.Auth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace HeimReport.Api.UnitTests.Services.Auth;
 
@@ -45,4 +49,59 @@ public class AuthServiceTests
             _logger.Object
         );
     }
+
+    // ===================== REGISTRATION =====================
+
+    [Fact]
+    public async Task RegisterAsync_ShouldSucced_WhenEmployeeIsActiveAndHasNoAccount()
+    {
+        // Arrange
+        var employee = new Employee
+        {
+            Id = 1,
+            FirstName = "Hugo",
+            LastName = "Esparza",
+            Email = "hugo@heimreport.com",
+            NormalizedEmail = "HUGO@HEIMREPORT.COM",
+            NationalId = "ABC123",
+            HireDate = DateTime.UtcNow.AddYears(-1),
+            ContractType = ContractType.Permanent,
+            CountryId = 1,
+            DepartmentId = 1,
+            PositionId = 1,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var dto = new UserRegistrationDto
+        {
+            Email = "hugo@heimreport.com",
+            Username = "hugoesparzac",
+            Password = "SecurePass123!",
+            ConfirmPassword = "SecurePass123!",
+            PreferredLanguage = Language.English
+        };
+
+        _employeeRepository
+            .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(employee);
+
+        _userRepository
+            .Setup(r => r.GetByEmployeeIdAsync(employee.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        _passwordHasher.Setup(h => h.Hash(dto.Password)).Returns("hashed-password");
+        _tokenHasher.Setup(h => h.GenerateRawToken()).Returns("raw-token");
+        _tokenHasher.Setup(h => h.Hash("raw-token")).Returns("hashed-token");
+
+        // Act
+        await _sut.RegisterAsync(dto);
+
+        // Assert
+        _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
+        _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _emailSender.Verify(
+            e => e.SendEmailVerificationAsync(employee.Email, "raw-token", Language.English, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
 }
