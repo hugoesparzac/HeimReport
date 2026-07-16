@@ -412,6 +412,41 @@ public class AuthServiceTests
         _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task RefreshAsync_ShouldRevokeAllActiveTokens_WhenAnAlreadyRevokedTokenIsReused()
+    {
+        // Arrange
+        var storedToken = GetRefreshTokenFaker(
+            tokenHash: "reused-hash",
+            revokedAt: DateTime.UtcNow.AddHours(-1))
+            .Generate();
+
+        var otherActiveToken = GetRefreshTokenFaker(tokenHash: "another-active-hash")
+            .Generate();
+        otherActiveToken.UserId = storedToken.UserId;
+
+        _tokenHasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("reused-hash");
+        _refreshTokenRepository
+            .Setup(r => r.GetByTokenHashAsync("reused-hash", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(storedToken);
+
+        _refreshTokenRepository
+            .Setup(r => r.GetActiveByUserIdAsync(storedToken.UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([otherActiveToken]);
+
+        _refreshTokenRepository
+            .Setup(r => r.Revoke(It.IsAny<RefreshToken>()))
+            .Callback<RefreshToken>(token => token.RevokedAt = DateTime.UtcNow);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync("reused-raw-token"));
+        Assert.Equal("This session is no longer valid. Please log in again.", exception.Message);
+
+        Assert.NotNull(otherActiveToken.RevokedAt);
+        _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
