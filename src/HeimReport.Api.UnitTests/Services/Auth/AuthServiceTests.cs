@@ -182,4 +182,65 @@ public class AuthServiceTests
         _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task RegisterAsync_ShouldThrow_WhenUsernameIsAlreadyTaken()
+    {
+        // Arrange
+        var employee = new Employee
+        {
+            Id = 1,
+            FirstName = "Hugo",
+            LastName = "Esparza",
+            Email = "hugo@heimreport.com",
+            NormalizedEmail = "HUGO@HEIMREPORT.COM",
+            NationalId = "ABC123",
+            HireDate = DateTime.UtcNow.AddYears(-1),
+            ContractType = ContractType.Permanent,
+            Status = EmployeeStatus.Active,
+            CountryId = 1,
+            DepartmentId = 1,
+            PositionId = 1,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var dto = new UserRegistrationDto
+        {
+            Email = "hugo@heimreport.com",
+            Username = "takenusername",
+            Password = "SecurePass123!",
+            ConfirmPassword = "SecurePass123!",
+            PreferredLanguage = Language.English
+        };
+
+        var someoneElsesAccount = new User
+        {
+            Id = 99,
+            EmployeeId = 999,
+            Username = "takenusername",
+            NormalizedUsername = "TAKENUSERNAME",
+            PasswordHash = "hashed",
+            Role = SystemRole.Employee,
+            IsEmailVerified = true,
+            IsActive = true,
+            PreferredLanguage = Language.English,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _employeeRepository
+            .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(employee);
+
+        _userRepository
+            .Setup(r => r.GetByEmployeeIdAsync(employee.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        _userRepository
+            .Setup(r => r.GetByNormalizedUsernameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(someoneElsesAccount);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
 }
