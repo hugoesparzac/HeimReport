@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component , inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { TopbarComponent } from '../../../shared/components/topbar/topbar';
 import { PageBackgroundComponent } from '../../../shared/components/page-background/page-background';
@@ -21,4 +22,11 @@ import { TopSeniorityPanelComponent } from './components/top-seniority-panel/top
   ],
   templateUrl: './employees-page.html',
 })
-export class EmployeesPageComponent {}
+export class EmployeesPageComponent {
+
+    private router = inject(Router);
+
+  goToRegister(): void {
+    this.router.navigate(['/employees/register']);
+  }
+}
