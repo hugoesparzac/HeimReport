@@ -195,6 +195,29 @@ public class AuthServiceTests
         _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task VerifyEmailAsync_ShouldThrow_WhenTokenIsExpired()
+    {
+        // Arrange
+        var user = GetUserFaker(
+            isEmailVerified: false,
+            emailVerificationTokenHash: "hashed-token",
+            emailVerificationTokenExpiresAt: DateTime.UtcNow.AddHours(-1))
+            .Generate();
+
+        _tokenHasher.Setup(h => h.Hash("raw-token")).Returns("hashed-token");
+        _userRepository
+            .Setup(r => r.GetByEmailVerificationTokenHashAsync("hashed-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.VerifyEmailAsync("raw-token"));
+        Assert.Equal("This verification link has expired. Please request a new one.", exception.Message);
+
+        Assert.False(user.IsEmailVerified);
+        _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
