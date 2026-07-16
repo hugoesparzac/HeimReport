@@ -617,6 +617,47 @@ public class AuthServiceTests
         _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // ===================== RESEND VERIFICATION =====================
+
+    [Fact]
+    public async Task ResendVerificationAsync_ShouldSendNewToken_WhenUserExistsAndEmailNotVerified()
+    {
+        // Arrange
+        const string newRawToken = "new-raw-token";
+        const string newHashedToken = "new-hashed-token";
+
+        var employee = GetEmployeeFaker().Generate();
+        var user = GetUserFaker(employeeId: employee.Id, isEmailVerified: false).Generate();
+        var dto = new ResendEmailVerificationDto { Email = employee.Email };
+
+        _employeeRepository
+            .Setup(r => r.GetActiveByNormalizedEmailAsync(employee.NormalizedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(employee);
+
+        _userRepository
+            .Setup(r => r.GetByEmployeeIdAsync(employee.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _tokenHasher
+            .Setup(h => h.GenerateRawToken())
+            .Returns(newRawToken);
+
+        _tokenHasher
+            .Setup(h => h.Hash(newRawToken))
+            .Returns(newHashedToken);
+
+        // Act
+        await _sut.ResendVerificationAsync(dto);
+
+        // Assert
+        Assert.Equal(newHashedToken, user.EmailVerificationTokenHash);
+
+        _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _emailSender.Verify(
+            e => e.SendEmailVerificationAsync(employee.Email, newRawToken, user.PreferredLanguage, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
