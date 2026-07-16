@@ -218,6 +218,20 @@ public class AuthServiceTests
         _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task VerifyEmailAsync_ShouldThrow_WhenTokenIsNotFound()
+    {
+        // Arrange
+        _tokenHasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("hashed-token");
+        _userRepository
+            .Setup(r => r.GetByEmailVerificationTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.VerifyEmailAsync("invalid-token"));
+        Assert.Equal("This verification link is invalid or has already been used.", exception.Message);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
