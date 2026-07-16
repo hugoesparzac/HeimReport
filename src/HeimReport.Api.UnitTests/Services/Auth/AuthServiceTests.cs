@@ -232,6 +232,34 @@ public class AuthServiceTests
         Assert.Equal("This verification link is invalid or has already been used.", exception.Message);
     }
 
+    // ===================== LOGIN =====================
+
+    [Fact]
+    public async Task LoginAsync_ShouldSucceed_WhenCredentialsAreValidAndAccountIsVerifiedAndActive()
+    {
+        // Arrange
+        var user = GetUserFaker().Generate();
+        var dto = GetLoginDtoFaker(user.Username).Generate();
+
+        _userRepository
+            .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(true);
+        _jwtProvider.Setup(j => j.GenerateToken(user)).Returns("access-token");
+        _tokenHasher.Setup(h => h.GenerateRawToken()).Returns("raw-refresh-token");
+        _tokenHasher.Setup(h => h.Hash("raw-refresh-token")).Returns("hashed-refresh-token");
+
+        // Act
+        var result = await _sut.LoginAsync(dto);
+
+        // Assert
+        Assert.Equal("access-token", result.AccessToken);
+        Assert.Equal("raw-refresh-token", result.RefreshToken);
+        _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Once);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
@@ -260,6 +288,7 @@ public class AuthServiceTests
         int? employeeId = null,
         string? username = null,
         bool isEmailVerified = true,
+        bool isActive = true,
         string? emailVerificationTokenHash = null,
         DateTime? emailVerificationTokenExpiresAt = null) => new Faker<User>()
         .RuleFor(u => u.Id, f => f.IndexFaker + 1)
@@ -271,7 +300,12 @@ public class AuthServiceTests
         .RuleFor(u => u.IsEmailVerified, isEmailVerified)
         .RuleFor(u => u.EmailVerificationTokenHash, emailVerificationTokenHash)
         .RuleFor(u => u.EmailVerificationTokenExpiresAt, emailVerificationTokenExpiresAt)
-        .RuleFor(u => u.IsActive, true)
+        .RuleFor(u => u.IsActive, isActive)
         .RuleFor(u => u.PreferredLanguage, f => f.PickRandom<Language>())
         .RuleFor(u => u.CreatedAt, f => f.Date.Recent());
+
+    private static Faker<UserLoginDto> GetLoginDtoFaker(string? usernameOrEmail = null, string? password = null) =>
+    new Faker<UserLoginDto>()
+        .RuleFor(d => d.UsernameOrEmail, f => usernameOrEmail ?? f.Internet.UserName())
+        .RuleFor(d => d.Password, _ => password ?? "P@ssw0rd123!");
 }
