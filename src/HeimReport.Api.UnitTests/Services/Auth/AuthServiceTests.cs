@@ -389,33 +389,51 @@ public class AuthServiceTests
     public async Task RefreshAsync_ShouldSucceed_WhenTokenIsValidAndNotExpiredOrRevoked()
     {
         // Arrange
+        const string oldRawToken = "old-raw-token";
+        const string oldHash = "old-hash";
+        const string newRawToken = "new-raw-token";
+        const string newHash = "new-hash";
+        const string newAccessToken = "new-access-token";
+
         var employee = GetEmployeeFaker().Generate();
         var user = GetUserFaker(employeeId: employee.Id).Generate();
         user.Employee = employee;
 
-        var storedToken = GetRefreshTokenFaker(user: user, tokenHash: "old-hash").Generate();
+        var storedToken = GetRefreshTokenFaker(user: user, tokenHash: oldHash).Generate();
 
-        _tokenHasher.Setup(h => h.Hash("old-raw-token")).Returns("old-hash");
+        _tokenHasher
+            .Setup(h => h.Hash(oldRawToken))
+            .Returns(oldHash);
+
         _refreshTokenRepository
-            .Setup(r => r.GetByTokenHashAsync("old-hash", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByTokenHashAsync(oldHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(storedToken);
 
         _refreshTokenRepository
             .Setup(r => r.Revoke(It.IsAny<RefreshToken>()))
             .Callback<RefreshToken>(token => token.RevokedAt = DateTime.UtcNow);
 
-        _jwtProvider.Setup(j => j.GenerateToken(user)).Returns("new-access-token");
-        _tokenHasher.Setup(h => h.GenerateRawToken()).Returns("new-raw-token");
-        _tokenHasher.Setup(h => h.Hash("new-raw-token")).Returns("new-hash");
+        _jwtProvider
+            .Setup(j => j.GenerateToken(user))
+            .Returns(newAccessToken);
+
+        _tokenHasher
+            .Setup(h => h.GenerateRawToken())
+            .Returns(newRawToken);
+
+        _tokenHasher
+            .Setup(h => h.Hash(newRawToken))
+            .Returns(newHash);
 
         // Act
-        var result = await _sut.RefreshAsync("old-raw-token");
+        var result = await _sut.RefreshAsync(oldRawToken);
 
         // Assert
-        Assert.Equal("new-access-token", result.AccessToken);
-        Assert.Equal("new-raw-token", result.RefreshToken);
-        Assert.Equal("new-hash", storedToken.ReplacedByTokenHash);
+        Assert.Equal(newAccessToken, result.AccessToken);
+        Assert.Equal(newRawToken, result.RefreshToken);
+        Assert.Equal(newHash, storedToken.ReplacedByTokenHash);
         Assert.NotNull(storedToken.RevokedAt);
+
         _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Once);
         _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -424,54 +442,47 @@ public class AuthServiceTests
     public async Task RefreshAsync_ShouldThrow_WhenTokenIsNotFound()
     {
         // Arrange
-        _tokenHasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("unknown-hash");
+        const string rawToken = "unknown-raw-token";
+        const string tokenHash = "unknown-hash";
+
+        _tokenHasher
+            .Setup(h => h.Hash(rawToken))
+            .Returns(tokenHash);
+
         _refreshTokenRepository
-            .Setup(r => r.GetByTokenHashAsync("unknown-hash", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RefreshToken?)null);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync("unknown-raw-token"));
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync(rawToken));
         Assert.Equal("Invalid refresh token.", exception.Message);
 
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task RefreshAsync_ShouldThrow_WhenTokenIsExpired()
-    {
-        // Arrange
-        var storedToken = GetRefreshTokenFaker(tokenHash: "expired-hash", expiresAt: DateTime.UtcNow.AddDays(-1))
-            .Generate();
-
-        _tokenHasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("expired-hash");
-        _refreshTokenRepository
-            .Setup(r => r.GetByTokenHashAsync("expired-hash", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(storedToken);
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync("expired-raw-token"));
-        Assert.Equal("This session has expired. Please log in again.", exception.Message);
-
-        _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
         _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task RefreshAsync_ShouldRevokeAllActiveTokens_WhenAnAlreadyRevokedTokenIsReused()
     {
         // Arrange
-        var storedToken = GetRefreshTokenFaker(
-            tokenHash: "reused-hash",
-            revokedAt: DateTime.UtcNow.AddHours(-1))
-            .Generate();
+        const string rawToken = "reused-raw-token";
+        const string tokenHash = "reused-hash";
 
-        var otherActiveToken = GetRefreshTokenFaker(tokenHash: "another-active-hash")
-            .Generate();
+        var storedToken = GetRefreshTokenFaker(
+            tokenHash: tokenHash,
+            revokedAt: DateTime.UtcNow.AddHours(-1)
+        ).Generate();
+
+        var otherActiveToken = GetRefreshTokenFaker(tokenHash: "another-active-hash").Generate();
         otherActiveToken.UserId = storedToken.UserId;
 
-        _tokenHasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("reused-hash");
+        _tokenHasher
+            .Setup(h => h.Hash(rawToken))
+            .Returns(tokenHash);
+
         _refreshTokenRepository
-            .Setup(r => r.GetByTokenHashAsync("reused-hash", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(storedToken);
 
         _refreshTokenRepository
@@ -483,12 +494,43 @@ public class AuthServiceTests
             .Callback<RefreshToken>(token => token.RevokedAt = DateTime.UtcNow);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync("reused-raw-token"));
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync(rawToken));
         Assert.Equal("This session is no longer valid. Please log in again.", exception.Message);
 
         Assert.NotNull(otherActiveToken.RevokedAt);
+
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
         _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ShouldThrow_WhenTokenIsExpired()
+    {
+        // Arrange
+        const string rawToken = "expired-raw-token";
+        const string tokenHash = "expired-hash";
+
+        var storedToken = GetRefreshTokenFaker(
+            tokenHash: tokenHash,
+            expiresAt: DateTime.UtcNow.AddDays(-1)
+        ).Generate();
+
+        _tokenHasher
+            .Setup(h => h.Hash(rawToken))
+            .Returns(tokenHash);
+
+        _refreshTokenRepository
+            .Setup(r => r.GetByTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(storedToken);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync(rawToken));
+        Assert.Equal("This session has expired. Please log in again.", exception.Message);
+
+        _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ===================== BOGUS FAKERS =====================

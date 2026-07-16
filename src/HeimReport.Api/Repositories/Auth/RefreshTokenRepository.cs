@@ -7,11 +7,9 @@ namespace HeimReport.Api.Repositories.Auth;
 public class RefreshTokenRepository(ApplicationDbContext context)
     : Repository<RefreshToken>(context), IRefreshTokenRepository
 {
-    public async Task<RefreshToken?> GetByTokenHashAsync(
-        string tokenHash,
-        CancellationToken cancellationToken = default)
+    public Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
     {
-        return await Context.RefreshTokens
+        return Context.RefreshTokens
             .Include(refreshToken => refreshToken.User)
             .ThenInclude(user => user!.Employee)
             .FirstOrDefaultAsync(
@@ -19,12 +17,12 @@ public class RefreshTokenRepository(ApplicationDbContext context)
                 cancellationToken);
     }
 
-    public async Task<List<RefreshToken>> GetActiveByUserIdAsync(
-        int userId,
-        CancellationToken cancellationToken = default)
+    public Task<List<RefreshToken>> GetActiveByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
-        return await Context.RefreshTokens
-            .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow)
+        return Context.RefreshTokens
+            .Where(rt => rt.UserId == userId &&
+                        rt.RevokedAt == null &&
+                        rt.ExpiresAt > DateTime.UtcNow)
             .ToListAsync(cancellationToken);
     }
 
