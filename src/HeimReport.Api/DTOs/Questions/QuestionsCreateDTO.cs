@@ -3,7 +3,7 @@ using HeimReport.Api.Enums;
 
 namespace HeimReport.Api.DTOs.Questions;
 
-public record QuestionsCreateDTO
+public record QuestionsCreateDto
 {
     public required int SurveyTemplateId { get; init; }
     public required string Text { get; init; }

@@ -1,6 +1,6 @@
 ﻿namespace HeimReport.Api.DTOs.QuestionOption;
 
-public record QuestionOptionUpdateDTO
+public record QuestionOptionUpdateDto
 {
     public required int Id { get; init; }
     public required int QuestionId { get; init; }
