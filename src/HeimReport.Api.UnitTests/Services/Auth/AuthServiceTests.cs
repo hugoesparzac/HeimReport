@@ -589,6 +589,34 @@ public class AuthServiceTests
         _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task LogoutAsync_ShouldDoNothing_WhenTokenIsAlreadyRevoked()
+    {
+        // Arrange
+        const string rawToken = "raw-token";
+        const string tokenHash = "already-revoked-hash";
+
+        var storedToken = GetRefreshTokenFaker(
+            tokenHash: tokenHash,
+            revokedAt: DateTime.UtcNow.AddHours(-1)
+        ).Generate();
+
+        _tokenHasher
+            .Setup(h => h.Hash(rawToken))
+            .Returns(tokenHash);
+
+        _refreshTokenRepository
+            .Setup(r => r.GetByTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(storedToken);
+
+        // Act
+        await _sut.LogoutAsync(rawToken);
+
+        // Assert
+        _refreshTokenRepository.Verify(r => r.Revoke(It.IsAny<RefreshToken>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
