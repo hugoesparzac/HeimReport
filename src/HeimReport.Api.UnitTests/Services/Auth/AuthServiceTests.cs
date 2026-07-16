@@ -658,6 +658,27 @@ public class AuthServiceTests
             Times.Once);
     }
 
+    [Fact]
+    public async Task ResendVerificationAsync_ShouldDoNothing_WhenEmployeeDoesNotMatchAnyActiveEmployee()
+    {
+        // Arrange
+        var dto = new ResendEmailVerificationDto { Email = "unknown@heimreport.com" };
+
+        _employeeRepository
+            .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Employee?)null);
+
+        // Act
+        await _sut.ResendVerificationAsync(dto);
+
+        // Assert
+        _userRepository.Verify(r => r.GetByEmployeeIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _emailSender.Verify(
+            e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()), 
+            Times.Never);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
