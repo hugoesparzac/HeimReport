@@ -339,6 +339,43 @@ public class AuthServiceTests
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
     }
 
+    // ===================== REFRESH =====================
+
+    [Fact]
+    public async Task RefreshAsync_ShouldSucceed_WhenTokenIsValidAndNotExpiredOrRevoked()
+    {
+        // Arrange
+        var employee = GetEmployeeFaker().Generate();
+        var user = GetUserFaker(employeeId: employee.Id).Generate();
+        user.Employee = employee;
+
+        var storedToken = GetRefreshTokenFaker(user: user, tokenHash: "old-hash").Generate();
+
+        _tokenHasher.Setup(h => h.Hash("old-raw-token")).Returns("old-hash");
+        _refreshTokenRepository
+            .Setup(r => r.GetByTokenHashAsync("old-hash", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(storedToken);
+
+        _refreshTokenRepository
+            .Setup(r => r.Revoke(It.IsAny<RefreshToken>()))
+            .Callback<RefreshToken>(token => token.RevokedAt = DateTime.UtcNow);
+
+        _jwtProvider.Setup(j => j.GenerateToken(user)).Returns("new-access-token");
+        _tokenHasher.Setup(h => h.GenerateRawToken()).Returns("new-raw-token");
+        _tokenHasher.Setup(h => h.Hash("new-raw-token")).Returns("new-hash");
+
+        // Act
+        var result = await _sut.RefreshAsync("old-raw-token");
+
+        // Assert
+        Assert.Equal("new-access-token", result.AccessToken);
+        Assert.Equal("new-raw-token", result.RefreshToken);
+        Assert.Equal("new-hash", storedToken.ReplacedByTokenHash);
+        Assert.NotNull(storedToken.RevokedAt);
+        _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Once);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
@@ -387,4 +424,17 @@ public class AuthServiceTests
     new Faker<UserLoginDto>()
         .RuleFor(d => d.UsernameOrEmail, f => usernameOrEmail ?? f.Internet.UserName())
         .RuleFor(d => d.Password, _ => password ?? "P@ssw0rd123!");
+
+    private static Faker<RefreshToken> GetRefreshTokenFaker(
+        User? user = null,
+        string? tokenHash = null,
+        DateTime? expiresAt = null,
+        DateTime? revokedAt = null) => new Faker<RefreshToken>()
+        .RuleFor(rt => rt.Id, f => f.IndexFaker + 1)
+        .RuleFor(rt => rt.UserId, f => user?.Id ?? f.Random.Int(1, 1000))
+        .RuleFor(rt => rt.User, user)
+        .RuleFor(rt => rt.TokenHash, f => tokenHash ?? f.Random.Hash())
+        .RuleFor(rt => rt.ExpiresAt, f => expiresAt ?? f.Date.Future())
+        .RuleFor(rt => rt.CreatedAt, f => f.Date.Recent())
+        .RuleFor(rt => rt.RevokedAt, revokedAt);
 }
