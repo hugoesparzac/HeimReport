@@ -5,6 +5,9 @@ import { Component, input } from '@angular/core';
   standalone: true,
   imports: [],
   templateUrl: './form-section.html',
+   host: {
+    class: 'block',
+  },
 })
 export class FormSectionComponent {
   icon = input.required<string>();
