@@ -10,7 +10,6 @@ using HeimReport.Api.Services.Auth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace HeimReport.Api.UnitTests.Services.Auth;
 
@@ -57,37 +56,19 @@ public class AuthServiceTests
     public async Task RegisterAsync_ShouldSucced_WhenEmployeeIsActiveAndHasNoAccount()
     {
         // Arrange
-        var employee = new Employee
-        {
-            Id = 1,
-            FirstName = "Hugo",
-            LastName = "Esparza",
-            Email = "hugo@heimreport.com",
-            NormalizedEmail = "HUGO@HEIMREPORT.COM",
-            NationalId = "ABC123",
-            HireDate = DateTime.UtcNow.AddYears(-1),
-            ContractType = ContractType.Permanent,
-            CountryId = 1,
-            DepartmentId = 1,
-            PositionId = 1,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var dto = new UserRegistrationDto
-        {
-            Email = "hugo@heimreport.com",
-            Username = "hugoesparzac",
-            Password = "SecurePass123!",
-            ConfirmPassword = "SecurePass123!",
-            PreferredLanguage = Language.English
-        };
+        var employee = CreateValidEmployee();
+        var dto = CreateValidRegistrationDto();
 
         _employeeRepository
-            .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveByNormalizedEmailAsync(dto.Email.ToUpperInvariant(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(employee);
 
         _userRepository
             .Setup(r => r.GetByEmployeeIdAsync(employee.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        _userRepository
+            .Setup(r => r.GetByNormalizedUsernameAsync(dto.Username.ToUpperInvariant(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         _passwordHasher.Setup(h => h.Hash(dto.Password)).Returns("hashed-password");
@@ -98,76 +79,41 @@ public class AuthServiceTests
         await _sut.RegisterAsync(dto);
 
         // Assert
-        _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
+        _userRepository.Verify(r => r.AddAsync(It.Is<User>(u => u.EmployeeId == employee.Id &&
+            u.PasswordHash == "hashed-password" &&
+            u.EmailVerificationTokenHash == "hashed-token"
+        ), It.IsAny<CancellationToken>()), Times.Once);
+
         _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _emailSender.Verify(
-            e => e.SendEmailVerificationAsync(employee.Email, "raw-token", Language.English, It.IsAny<CancellationToken>()),
-            Times.Once);
+        _emailSender.Verify(e => e.SendEmailVerificationAsync(employee.Email, "raw-token", dto.PreferredLanguage, It.IsAny<CancellationToken>()),Times.Once);
     }
 
     [Fact]
     public async Task RegisterAsync_ShouldThrow_WhenEmailDoesNotMatchAnyActiveEmployee()
     {
         // Arrange
-        var dto = new UserRegistrationDto
-        {
-            Email = "unknown@heimreport.com",
-            Username = "someone",
-            Password = "SecurePass123!",
-            ConfirmPassword = "SecurePass123!",
-            PreferredLanguage = Language.English
-        };
+        var dto = CreateValidRegistrationDto();
 
         _employeeRepository
-            .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()));
+            .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Employee?)null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        Assert.Equal("Unable to complete registration with the provided information.", exception.Message);
+
         _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _emailSender.Verify(e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task RegisterAsync_ShouldThrow_WhenEmployeeAlreadyHasAnAccount()
     {
         // Arrange
-        var employee = new Employee
-        {
-            Id = 1,
-            FirstName = "Hugo",
-            LastName = "Esparza",
-            Email = "hugo@heimreport.com",
-            NormalizedEmail = "HUGO@HEIMREPORT.COM",
-            NationalId = "ABC123",
-            HireDate = DateTime.UtcNow.AddYears(-1),
-            ContractType = ContractType.Permanent,
-            CountryId = 1,
-            DepartmentId = 1,
-            PositionId = 1,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var existingUser = new User
-        {
-            Id = 5,
-            EmployeeId = employee.Id,
-            Username = "existing",
-            NormalizedUsername = "EXISTING",
-            PasswordHash = "already-hashed",
-            Role = SystemRole.Employee,
-            IsEmailVerified = true,
-            IsActive = true,
-            PreferredLanguage = Language.English,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var dto = new UserRegistrationDto
-        {
-            Email = "hugo@heimreport.com",
-            Username = "newattempt",
-            Password = "SecurePass123!",
-            ConfirmPassword = "SecurePass123!",
-            PreferredLanguage = Language.English
-        };
+        var employee = CreateValidEmployee();
+        var dto = CreateValidRegistrationDto();
+        var existingUser = CreateExistingUser(employee.Id, "existing");
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -178,53 +124,20 @@ public class AuthServiceTests
             .ReturnsAsync(existingUser);
 
         // Act & Assert
-        await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        Assert.Equal("Unable to complete registration with the provided information.", exception.Message);
+
         _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
+        _emailSender.Verify(e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task RegisterAsync_ShouldThrow_WhenUsernameIsAlreadyTaken()
     {
         // Arrange
-        var employee = new Employee
-        {
-            Id = 1,
-            FirstName = "Hugo",
-            LastName = "Esparza",
-            Email = "hugo@heimreport.com",
-            NormalizedEmail = "HUGO@HEIMREPORT.COM",
-            NationalId = "ABC123",
-            HireDate = DateTime.UtcNow.AddYears(-1),
-            ContractType = ContractType.Permanent,
-            Status = EmployeeStatus.Active,
-            CountryId = 1,
-            DepartmentId = 1,
-            PositionId = 1,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var dto = new UserRegistrationDto
-        {
-            Email = "hugo@heimreport.com",
-            Username = "takenusername",
-            Password = "SecurePass123!",
-            ConfirmPassword = "SecurePass123!",
-            PreferredLanguage = Language.English
-        };
-
-        var someoneElsesAccount = new User
-        {
-            Id = 99,
-            EmployeeId = 999,
-            Username = "takenusername",
-            NormalizedUsername = "TAKENUSERNAME",
-            PasswordHash = "hashed",
-            Role = SystemRole.Employee,
-            IsEmailVerified = true,
-            IsActive = true,
-            PreferredLanguage = Language.English,
-            CreatedAt = DateTime.UtcNow
-        };
+        var employee = CreateValidEmployee();
+        var dto = CreateValidRegistrationDto();
+        var someoneElsesAccount = CreateExistingUser(999, dto.Username);
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -235,12 +148,56 @@ public class AuthServiceTests
             .ReturnsAsync((User?)null);
 
         _userRepository
-            .Setup(r => r.GetByNormalizedUsernameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByNormalizedUsernameAsync(dto.Username.ToUpperInvariant(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(someoneElsesAccount);
 
         // Act & Assert
-        await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        Assert.Equal("This username is already taken. Please choose a different one.", exception.Message);
+
         _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
+        _emailSender.Verify(e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // ===================== HELPER METHODS (FACTORIES) =====================
+
+    private static Employee CreateValidEmployee() => new()
+    {
+        Id = 1,
+        FirstName = "Hugo",
+        LastName = "Esparza",
+        Email = "hugo@heimreport.com",
+        NormalizedEmail = "HUGO@HEIMREPORT.COM",
+        NationalId = "ABC123",
+        HireDate = DateTime.UtcNow.AddYears(-1),
+        ContractType = ContractType.Permanent,
+        Status = EmployeeStatus.Active,
+        CountryId = 1,
+        DepartmentId = 1,
+        PositionId = 1,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    private static UserRegistrationDto CreateValidRegistrationDto() => new()
+    {
+        Email = "hugo@heimreport.com",
+        Username = "hugoesparzac",
+        Password = "SecurePass123!",
+        ConfirmPassword = "SecurePass123!",
+        PreferredLanguage = Language.English
+    };
+
+    private static User CreateExistingUser(int employeeId, string username) => new()
+    {
+        Id = 99,
+        EmployeeId = employeeId,
+        Username = username,
+        NormalizedUsername = username.ToUpperInvariant(),
+        PasswordHash = "already-hashed",
+        Role = SystemRole.Employee,
+        IsEmailVerified = true,
+        IsActive = true,
+        PreferredLanguage = Language.English,
+        CreatedAt = DateTime.UtcNow
+    };
 }
