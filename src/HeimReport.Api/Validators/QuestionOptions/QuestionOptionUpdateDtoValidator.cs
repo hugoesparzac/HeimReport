@@ -6,9 +6,6 @@ public class QuestionOptionUpdateDtoValidator : AbstractValidator<QuestionOption
 {
     public QuestionOptionUpdateDtoValidator()
     {
-        RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("Id is required")
-            .GreaterThan(0).WithMessage("Id must be a positive integer");
         RuleFor(x => x.QuestionId)
             .NotEmpty().WithMessage("QuestionId is required")
             .GreaterThan(0).WithMessage("QuestionId must be a positive integer");
