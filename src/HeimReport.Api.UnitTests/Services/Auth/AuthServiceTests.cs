@@ -675,7 +675,32 @@ public class AuthServiceTests
         _userRepository.Verify(r => r.GetByEmployeeIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _emailSender.Verify(
-            e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()), 
+            e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ResendVerificationAsync_ShouldDoNothing_WhenEmployeeHasNoAccount()
+    {
+        // Arrange
+        var employee = GetEmployeeFaker().Generate();
+        var dto = new ResendEmailVerificationDto { Email = employee.Email };
+
+        _employeeRepository
+            .Setup(r => r.GetActiveByNormalizedEmailAsync(employee.NormalizedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(employee);
+
+        _userRepository
+            .Setup(r => r.GetByEmployeeIdAsync(employee.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        // Act
+        await _sut.ResendVerificationAsync(dto);
+
+        // Assert
+        _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _emailSender.Verify(
+            e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
