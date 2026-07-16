@@ -281,6 +281,24 @@ public class AuthServiceTests
         _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task LoginAsync_ShouldThrow_WhenUserIsNotFound()
+    {
+        // Arrange
+        var dto = GetLoginDtoFaker().Generate();
+
+        _userRepository
+            .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
+        Assert.Equal("Invalid username/email or password.", exception.Message);
+
+        _passwordHasher.Verify(h => h.Verify(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
