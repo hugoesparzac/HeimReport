@@ -1,0 +1,9 @@
+<div>
+  <div class="flex items-center gap-2 mb-6">
+    <span class="material-symbols-outlined text-[#0F172A] text-xl">{{ icon() }}</span>
+    <h3 class="text-xs text-[#0F172A] uppercase tracking-wider font-bold">{{ title() }}</h3>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <ng-content />
+  </div>
+</div>
