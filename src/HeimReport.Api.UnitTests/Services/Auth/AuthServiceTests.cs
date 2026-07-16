@@ -2,6 +2,7 @@ using HeimReport.Api.DTOs.Auth;
 using HeimReport.Api.Email;
 using HeimReport.Api.Entities;
 using HeimReport.Api.Enums;
+using HeimReport.Api.Exceptions;
 using HeimReport.Api.Repositories.Auth;
 using HeimReport.Api.Repositories.Employees;
 using HeimReport.Api.Security;
@@ -102,6 +103,27 @@ public class AuthServiceTests
         _emailSender.Verify(
             e => e.SendEmailVerificationAsync(employee.Email, "raw-token", Language.English, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_ShouldThrow_WhenEmailDoesNotMatchAnyActiveEmployee()
+    {
+        // Arrange
+        var dto = new UserRegistrationDto
+        {
+            Email = "unknown@heimreport.com",
+            Username = "someone",
+            Password = "SecurePass123!",
+            ConfirmPassword = "SecurePass123!",
+            PreferredLanguage = Language.English
+        };
+
+        _employeeRepository
+            .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
 }
