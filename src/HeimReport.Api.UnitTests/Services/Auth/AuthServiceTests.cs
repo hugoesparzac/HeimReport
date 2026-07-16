@@ -264,10 +264,21 @@ public class AuthServiceTests
             .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
-        _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(true);
-        _jwtProvider.Setup(j => j.GenerateToken(user)).Returns("access-token");
-        _tokenHasher.Setup(h => h.GenerateRawToken()).Returns("raw-refresh-token");
-        _tokenHasher.Setup(h => h.Hash("raw-refresh-token")).Returns("hashed-refresh-token");
+        _passwordHasher
+            .Setup(h => h.Verify(dto.Password, user.PasswordHash))
+            .Returns(true);
+
+        _jwtProvider
+            .Setup(j => j.GenerateToken(user))
+            .Returns("access-token");
+
+        _tokenHasher
+            .Setup(h => h.GenerateRawToken())
+            .Returns("raw-refresh-token");
+
+        _tokenHasher
+            .Setup(h => h.Hash("raw-refresh-token"))
+            .Returns("hashed-refresh-token");
 
         // Act
         var result = await _sut.LoginAsync(dto);
@@ -275,6 +286,7 @@ public class AuthServiceTests
         // Assert
         Assert.Equal("access-token", result.AccessToken);
         Assert.Equal("raw-refresh-token", result.RefreshToken);
+
         _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Once);
         _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -290,7 +302,9 @@ public class AuthServiceTests
             .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
-        _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(false);
+        _passwordHasher
+            .Setup(h => h.Verify(dto.Password, user.PasswordHash))
+            .Returns(false);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
@@ -298,6 +312,7 @@ public class AuthServiceTests
 
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
         _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -316,6 +331,8 @@ public class AuthServiceTests
 
         _passwordHasher.Verify(h => h.Verify(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -329,13 +346,17 @@ public class AuthServiceTests
             .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
-        _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(true);
+        _passwordHasher
+            .Setup(h => h.Verify(dto.Password, user.PasswordHash))
+            .Returns(true);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
         Assert.Equal("Please verify your email address before logging in.", exception.Message);
 
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -349,13 +370,17 @@ public class AuthServiceTests
             .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
-        _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(true);
+        _passwordHasher
+            .Setup(h => h.Verify(dto.Password, user.PasswordHash))
+            .Returns(true);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
         Assert.Equal("This account has been deactivated. Please contact support.", exception.Message);
 
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ===================== REFRESH =====================
