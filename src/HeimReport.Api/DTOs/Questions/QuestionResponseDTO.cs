@@ -3,9 +3,9 @@ using HeimReport.Api.Enums;
 
 namespace HeimReport.Api.DTOs.Questions;
 
-public record QuestionsResponseDTO
+public record QuestionResponseDto
 {
-    public required int Id { get; init; }
+    public int Id { get; init; }
     public required int SurveyTemplateId { get; init; }
     public SurveyTemplate? SurveyTemplate { get; init; }
     public required string Text { get; init; }

@@ -1,9 +1,9 @@
 ﻿
 namespace HeimReport.Api.DTOs.SurveyTemplates;
 
-public record SurveyTemplateResponseDTO
+public record SurveyTemplateResponseDto
 {
-    public required int Id { get; init; }
+    public int Id { get; init; }
     public required string Name { get; init; }
     public required int MilestoneMonths { get; init; }
     public string? Description { get; init; }

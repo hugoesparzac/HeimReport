@@ -1,7 +1,7 @@
 ﻿
 namespace HeimReport.Api.DTOs.SurveyTemplates;
 
-public record SurveyTemplateCreateUpdateDTO
+public record SurveyTemplateCreateUpdateDto
 {
     public required string Name { get; init; }
     public required int MilestoneMonths { get; init; }

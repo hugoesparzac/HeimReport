@@ -2,9 +2,9 @@
 
 namespace HeimReport.Api.DTOs.QuestionOption;
 
-public record QuestionOptionResponseDTO
+public record QuestionOptionResponseDto
 {
-    public required int Id {  get; init; }
+    public int Id {  get; init; }
     public required int QuestionId { get; init; }
     public required Question? Question { get; init; }
     public required string Text { get; init; }

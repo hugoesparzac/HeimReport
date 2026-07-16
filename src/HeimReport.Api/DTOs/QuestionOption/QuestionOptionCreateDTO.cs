@@ -1,5 +1,5 @@
 ﻿namespace HeimReport.Api.DTOs.QuestionOption;
-public record QuestionOptionCreateDTO
+public record QuestionOptionCreateDto
 {
     public required int QuestionId { get; init; }
     public required string Text { get; init; }
