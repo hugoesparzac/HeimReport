@@ -102,7 +102,7 @@ public class AuthServiceTests
     public async Task RegisterAsync_ShouldThrow_WhenEmailDoesNotMatchAnyActiveEmployee()
     {
         // Arrange
-        var dto = GetRegistrationDtoFaker().Generate(); // Email aleatorio
+        var dto = GetRegistrationDtoFaker().Generate();
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -169,6 +169,32 @@ public class AuthServiceTests
         _emailSender.Verify(e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // ===================== EMAIL VERIFICATION =====================
+
+    [Fact]
+    public async Task VerifyEmailAsync_ShouldSucceed_WhenTokenIsValidAndNotExpired()
+    {
+        // Arrange
+        var user = GetUserFaker(
+            isEmailVerified: false,
+            emailVerificationTokenHash: "hashed-token",
+            emailVerificationTokenExpiresAt: DateTime.UtcNow.AddHours(1))
+            .Generate();
+
+        _tokenHasher.Setup(h => h.Hash("raw-token")).Returns("hashed-token");
+        _userRepository
+            .Setup(r => r.GetByEmailVerificationTokenHashAsync("hashed-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        // Act
+        await _sut.VerifyEmailAsync("raw-token");
+
+        // Assert
+        Assert.True(user.IsEmailVerified);
+        Assert.Null(user.EmailVerificationTokenHash);
+        _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
@@ -193,14 +219,21 @@ public class AuthServiceTests
         .RuleFor(d => d.ConfirmPassword, (_, d) => d.Password)
         .RuleFor(d => d.PreferredLanguage, f => f.PickRandom<Language>());
 
-    private static Faker<User> GetUserFaker(int? employeeId = null, string? username = null) => new Faker<User>()
+    private static Faker<User> GetUserFaker(
+        int? employeeId = null,
+        string? username = null,
+        bool isEmailVerified = true,
+        string? emailVerificationTokenHash = null,
+        DateTime? emailVerificationTokenExpiresAt = null) => new Faker<User>()
         .RuleFor(u => u.Id, f => f.IndexFaker + 1)
         .RuleFor(u => u.EmployeeId, f => employeeId ?? f.Random.Int(100, 1000))
         .RuleFor(u => u.Username, f => username ?? f.Internet.UserName())
         .RuleFor(u => u.NormalizedUsername, (_, u) => u.Username.ToUpperInvariant())
         .RuleFor(u => u.PasswordHash, f => f.Internet.Password())
         .RuleFor(u => u.Role, f => f.PickRandom<SystemRole>())
-        .RuleFor(u => u.IsEmailVerified, true)
+        .RuleFor(u => u.IsEmailVerified, isEmailVerified)
+        .RuleFor(u => u.EmailVerificationTokenHash, emailVerificationTokenHash)
+        .RuleFor(u => u.EmailVerificationTokenExpiresAt, emailVerificationTokenExpiresAt)
         .RuleFor(u => u.IsActive, true)
         .RuleFor(u => u.PreferredLanguage, f => f.PickRandom<Language>())
         .RuleFor(u => u.CreatedAt, f => f.Date.Recent());
