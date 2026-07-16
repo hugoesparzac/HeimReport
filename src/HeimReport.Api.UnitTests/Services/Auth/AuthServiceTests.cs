@@ -299,6 +299,26 @@ public class AuthServiceTests
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
     }
 
+    [Fact]
+    public async Task LoginAsync_ShouldThrow_WhenEmailIsNotVerified()
+    {
+        // Arrange
+        var user = GetUserFaker(isEmailVerified: false).Generate();
+        var dto = GetLoginDtoFaker(user.Username).Generate();
+
+        _userRepository
+            .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(true);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
+        Assert.Equal("Please verify your email address before logging in.", exception.Message);
+
+        _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
