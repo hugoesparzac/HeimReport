@@ -376,6 +376,22 @@ public class AuthServiceTests
         _refreshTokenRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task RefreshAsync_ShouldThrow_WhenTokenIsNotFound()
+    {
+        // Arrange
+        _tokenHasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("unknown-hash");
+        _refreshTokenRepository
+            .Setup(r => r.GetByTokenHashAsync("unknown-hash", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((RefreshToken?)null);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync("unknown-raw-token"));
+        Assert.Equal("Invalid refresh token.", exception.Message);
+
+        _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
