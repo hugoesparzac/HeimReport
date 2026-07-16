@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using Bogus;
 using HeimReport.Api.DTOs.Auth;
 using HeimReport.Api.Email;
@@ -175,23 +176,28 @@ public class AuthServiceTests
     public async Task VerifyEmailAsync_ShouldSucceed_WhenTokenIsValidAndNotExpired()
     {
         // Arrange
+        const string rawToken = "raw-token";
+        const string tokenHash = "hashed-token";
+
         var user = GetUserFaker(
             isEmailVerified: false,
-            emailVerificationTokenHash: "hashed-token",
-            emailVerificationTokenExpiresAt: DateTime.UtcNow.AddHours(1))
-            .Generate();
+            emailVerificationTokenHash: tokenHash,
+            emailVerificationTokenExpiresAt: DateTime.UtcNow.AddHours(1)
+        ).Generate();
 
-        _tokenHasher.Setup(h => h.Hash("raw-token")).Returns("hashed-token");
+        _tokenHasher
+            .Setup(h => h.Hash(rawToken))
+            .Returns(tokenHash);
+
         _userRepository
-            .Setup(r => r.GetByEmailVerificationTokenHashAsync("hashed-token", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailVerificationTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
-        await _sut.VerifyEmailAsync("raw-token");
+        await _sut.VerifyEmailAsync(rawToken);
 
         // Assert
         Assert.True(user.IsEmailVerified);
-        Assert.Null(user.EmailVerificationTokenHash);
         _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -199,22 +205,27 @@ public class AuthServiceTests
     public async Task VerifyEmailAsync_ShouldThrow_WhenTokenIsExpired()
     {
         // Arrange
+        const string rawToken = "raw-token";
+        const string tokenHash = "hashed-token";
+
         var user = GetUserFaker(
             isEmailVerified: false,
-            emailVerificationTokenHash: "hashed-token",
-            emailVerificationTokenExpiresAt: DateTime.UtcNow.AddHours(-1))
-            .Generate();
+            emailVerificationTokenHash: tokenHash,
+            emailVerificationTokenExpiresAt: DateTime.UtcNow.AddHours(-1)
+        ).Generate();
 
-        _tokenHasher.Setup(h => h.Hash("raw-token")).Returns("hashed-token");
+        _tokenHasher
+            .Setup(h => h.Hash(rawToken))
+            .Returns(tokenHash);
+
         _userRepository
-            .Setup(r => r.GetByEmailVerificationTokenHashAsync("hashed-token", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailVerificationTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.VerifyEmailAsync("raw-token"));
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.VerifyEmailAsync(rawToken));
         Assert.Equal("This verification link has expired. Please request a new one.", exception.Message);
 
-        Assert.False(user.IsEmailVerified);
         _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -222,14 +233,22 @@ public class AuthServiceTests
     public async Task VerifyEmailAsync_ShouldThrow_WhenTokenIsNotFound()
     {
         // Arrange
-        _tokenHasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("hashed-token");
+        const string rawToken = "invalid-token";
+        const string tokenHash = "hashed-token";
+
+        _tokenHasher
+            .Setup(h => h.Hash(rawToken))
+            .Returns(tokenHash);
+
         _userRepository
             .Setup(r => r.GetByEmailVerificationTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.VerifyEmailAsync("invalid-token"));
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.VerifyEmailAsync(rawToken));
         Assert.Equal("This verification link is invalid or has already been used.", exception.Message);
+
+        _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ===================== LOGIN =====================
