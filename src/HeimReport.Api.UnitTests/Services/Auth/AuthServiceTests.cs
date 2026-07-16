@@ -1,3 +1,4 @@
+using Bogus;
 using HeimReport.Api.DTOs.Auth;
 using HeimReport.Api.Email;
 using HeimReport.Api.Entities;
@@ -56,8 +57,9 @@ public class AuthServiceTests
     public async Task RegisterAsync_ShouldSucced_WhenEmployeeIsActiveAndHasNoAccount()
     {
         // Arrange
-        var employee = CreateValidEmployee();
-        var dto = CreateValidRegistrationDto();
+        var employee = GetEmployeeFaker().Generate();
+
+        var dto = GetRegistrationDtoFaker(employee.Email).Generate();
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(dto.Email.ToUpperInvariant(), It.IsAny<CancellationToken>()))
@@ -79,20 +81,28 @@ public class AuthServiceTests
         await _sut.RegisterAsync(dto);
 
         // Assert
-        _userRepository.Verify(r => r.AddAsync(It.Is<User>(u => u.EmployeeId == employee.Id &&
-            u.PasswordHash == "hashed-password" &&
-            u.EmailVerificationTokenHash == "hashed-token"
-        ), It.IsAny<CancellationToken>()), Times.Once);
+        var normalizedUsername = dto.Username.ToUpperInvariant();
+
+        _userRepository.Verify(r => r.AddAsync(
+            It.Is<User>(u =>
+                u.EmployeeId == employee.Id &&
+                u.NormalizedUsername == normalizedUsername &&
+                u.PasswordHash == "hashed-password" &&
+                u.EmailVerificationTokenHash == "hashed-token"),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
 
         _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _emailSender.Verify(e => e.SendEmailVerificationAsync(employee.Email, "raw-token", dto.PreferredLanguage, It.IsAny<CancellationToken>()),Times.Once);
+        _emailSender.Verify(
+            e => e.SendEmailVerificationAsync(employee.Email, "raw-token", dto.PreferredLanguage, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
     public async Task RegisterAsync_ShouldThrow_WhenEmailDoesNotMatchAnyActiveEmployee()
     {
         // Arrange
-        var dto = CreateValidRegistrationDto();
+        var dto = GetRegistrationDtoFaker().Generate(); // Email aleatorio
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -111,9 +121,9 @@ public class AuthServiceTests
     public async Task RegisterAsync_ShouldThrow_WhenEmployeeAlreadyHasAnAccount()
     {
         // Arrange
-        var employee = CreateValidEmployee();
-        var dto = CreateValidRegistrationDto();
-        var existingUser = CreateExistingUser(employee.Id, "existing");
+        var employee = GetEmployeeFaker().Generate();
+        var dto = GetRegistrationDtoFaker(employee.Email).Generate();
+        var existingUser = GetUserFaker(employeeId: employee.Id).Generate();
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -135,9 +145,9 @@ public class AuthServiceTests
     public async Task RegisterAsync_ShouldThrow_WhenUsernameIsAlreadyTaken()
     {
         // Arrange
-        var employee = CreateValidEmployee();
-        var dto = CreateValidRegistrationDto();
-        var someoneElsesAccount = CreateExistingUser(999, dto.Username);
+        var employee = GetEmployeeFaker().Generate();
+        var dto = GetRegistrationDtoFaker(employee.Email).Generate();
+        var someoneElsesAccount = GetUserFaker(employeeId: 999, username: dto.Username).Generate();
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -159,45 +169,39 @@ public class AuthServiceTests
         _emailSender.Verify(e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // ===================== HELPER METHODS (FACTORIES) =====================
+    // ===================== BOGUS FAKERS =====================
 
-    private static Employee CreateValidEmployee() => new()
-    {
-        Id = 1,
-        FirstName = "Hugo",
-        LastName = "Esparza",
-        Email = "hugo@heimreport.com",
-        NormalizedEmail = "HUGO@HEIMREPORT.COM",
-        NationalId = "ABC123",
-        HireDate = DateTime.UtcNow.AddYears(-1),
-        ContractType = ContractType.Permanent,
-        Status = EmployeeStatus.Active,
-        CountryId = 1,
-        DepartmentId = 1,
-        PositionId = 1,
-        CreatedAt = DateTime.UtcNow
-    };
+    private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
+        .RuleFor(e => e.Id, f => f.IndexFaker + 1)
+        .RuleFor(e => e.FirstName, f => f.Name.FirstName())
+        .RuleFor(e => e.LastName, f => f.Name.LastName())
+        .RuleFor(e => e.Email, (f, e) => f.Internet.Email(e.FirstName, e.LastName))
+        .RuleFor(e => e.NormalizedEmail, (_, e) => e.Email.ToUpperInvariant())
+        .RuleFor(e => e.NationalId, f => f.Random.Replace("###-###-###"))
+        .RuleFor(e => e.HireDate, f => f.Date.Past(5))
+        .RuleFor(e => e.ContractType, f => f.PickRandom<ContractType>())
+        .RuleFor(e => e.Status, EmployeeStatus.Active)
+        .RuleFor(e => e.CountryId, f => f.Random.Int(1, 10))
+        .RuleFor(e => e.DepartmentId, f => f.Random.Int(1, 20))
+        .RuleFor(e => e.PositionId, f => f.Random.Int(1, 50))
+        .RuleFor(e => e.CreatedAt, f => f.Date.Past(6));
 
-    private static UserRegistrationDto CreateValidRegistrationDto() => new()
-    {
-        Email = "hugo@heimreport.com",
-        Username = "hugoesparzac",
-        Password = "SecurePass123!",
-        ConfirmPassword = "SecurePass123!",
-        PreferredLanguage = Language.English
-    };
+    private static Faker<UserRegistrationDto> GetRegistrationDtoFaker(string? email = null) => new Faker<UserRegistrationDto>()
+        .RuleFor(d => d.Email, f => email ?? f.Internet.Email())
+        .RuleFor(d => d.Username, f => f.Internet.UserName())
+        .RuleFor(d => d.Password, _ => "P@ssw0rd123!")
+        .RuleFor(d => d.ConfirmPassword, (_, d) => d.Password)
+        .RuleFor(d => d.PreferredLanguage, f => f.PickRandom<Language>());
 
-    private static User CreateExistingUser(int employeeId, string username) => new()
-    {
-        Id = 99,
-        EmployeeId = employeeId,
-        Username = username,
-        NormalizedUsername = username.ToUpperInvariant(),
-        PasswordHash = "already-hashed",
-        Role = SystemRole.Employee,
-        IsEmailVerified = true,
-        IsActive = true,
-        PreferredLanguage = Language.English,
-        CreatedAt = DateTime.UtcNow
-    };
+    private static Faker<User> GetUserFaker(int? employeeId = null, string? username = null) => new Faker<User>()
+        .RuleFor(u => u.Id, f => f.IndexFaker + 1)
+        .RuleFor(u => u.EmployeeId, f => employeeId ?? f.Random.Int(100, 1000))
+        .RuleFor(u => u.Username, f => username ?? f.Internet.UserName())
+        .RuleFor(u => u.NormalizedUsername, (_, u) => u.Username.ToUpperInvariant())
+        .RuleFor(u => u.PasswordHash, f => f.Internet.Password())
+        .RuleFor(u => u.Role, f => f.PickRandom<SystemRole>())
+        .RuleFor(u => u.IsEmailVerified, true)
+        .RuleFor(u => u.IsActive, true)
+        .RuleFor(u => u.PreferredLanguage, f => f.PickRandom<Language>())
+        .RuleFor(u => u.CreatedAt, f => f.Date.Recent());
 }
