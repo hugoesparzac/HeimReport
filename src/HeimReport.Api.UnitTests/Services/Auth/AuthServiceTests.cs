@@ -392,6 +392,26 @@ public class AuthServiceTests
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
     }
 
+    [Fact]
+    public async Task RefreshAsync_ShouldThrow_WhenTokenIsExpired()
+    {
+        // Arrange
+        var storedToken = GetRefreshTokenFaker(tokenHash: "expired-hash", expiresAt: DateTime.UtcNow.AddDays(-1))
+            .Generate();
+
+        _tokenHasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("expired-hash");
+        _refreshTokenRepository
+            .Setup(r => r.GetByTokenHashAsync("expired-hash", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(storedToken);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync("expired-raw-token"));
+        Assert.Equal("This session has expired. Please log in again.", exception.Message);
+
+        _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _refreshTokenRepository.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ===================== BOGUS FAKERS =====================
 
     private static Faker<Employee> GetEmployeeFaker() => new Faker<Employee>()
