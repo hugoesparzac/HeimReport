@@ -16,7 +16,7 @@ public class ChatSessionConfiguration : IEntityTypeConfiguration<ChatSession>
             .IsRequired();
         builder.Property(x => x.Status)
             .IsRequired();
-        
+
         builder.HasOne(x => x.SurveyInstance)
             .WithMany()
             .HasForeignKey(x => x.SurveyInstanceId)

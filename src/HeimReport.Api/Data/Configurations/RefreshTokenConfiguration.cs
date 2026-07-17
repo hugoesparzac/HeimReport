@@ -21,11 +21,11 @@ public class RefreshTokenConfiguration :IEntityTypeConfiguration<RefreshToken>
             .IsRequired();
         builder.Property(x => x.ReplacedByTokenHash)
             .HasMaxLength(255);
-        
+
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.TokenHash)
             .IsUnique();
-        
+
         builder.HasOne(x => x.User)
             .WithMany()
             .HasForeignKey(x => x.UserId)

@@ -1,12 +1,15 @@
 using System.Net;
 using HeimReport.Api.Enums;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RestSharp;
 using RestSharp.Authenticators;
 
 namespace HeimReport.Api.Email;
 
-public sealed class MailgunEmailSender(IOptions<MailgunOptions> options, ILogger<MailgunEmailSender> logger)
+public sealed partial class MailgunEmailSender(
+    IOptions<MailgunOptions> options,
+    ILogger<MailgunEmailSender> logger)
     : IEmailSender
 {
     private readonly MailgunOptions _options = options.Value;
@@ -41,23 +44,31 @@ public sealed class MailgunEmailSender(IOptions<MailgunOptions> options, ILogger
 
         if (response.StatusCode != HttpStatusCode.OK || !response.IsSuccessful)
         {
-            logger.LogError(
-                "Failed to send verification email to {Email}. Status: {StatusCode}. Error: {Error}",
-                toEmail, response.StatusCode, response.ErrorMessage ?? response.Content);
+            LogVerificationEmailFailed(
+                toEmail,
+                response.StatusCode,
+                response.ErrorMessage ?? response.Content);
 
             throw new InvalidOperationException(
                 $"Failed to send verification email via Mailgun. Status: {response.StatusCode}");
         }
 
-        logger.LogInformation("Verification email sent to {Email} in {Language}", toEmail, language);
+        LogVerificationEmailSent(toEmail, language);
     }
 
-    private static (string Subject, string Html) BuildTemplate(Language language, string verificationLink)
+    private static (string Subject, string Html) BuildTemplate(
+        Language language,
+        string verificationLink)
     {
         return language switch
         {
-            Language.Spanish => ("Verifica tu cuenta de HeimReport", BuildSpanishHtml(verificationLink)),
-            _ => ("Verify your HeimReport account", BuildEnglishHtml(verificationLink))
+            Language.Spanish => (
+                "Verifica tu cuenta de HeimReport",
+                BuildSpanishHtml(verificationLink)),
+
+            _ => (
+                "Verify your HeimReport account",
+                BuildEnglishHtml(verificationLink))
         };
     }
 
@@ -98,4 +109,19 @@ public sealed class MailgunEmailSender(IOptions<MailgunOptions> options, ILogger
             </p>
         </div>
         """;
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Failed to send verification email to {Email}. Status: {StatusCode}. Error: {Error}")]
+    private partial void LogVerificationEmailFailed(
+        string email,
+        HttpStatusCode statusCode,
+        string? error);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Verification email sent to {Email} in {Language}")]
+    private partial void LogVerificationEmailSent(
+        string email,
+        Language language);
 }

@@ -19,9 +19,9 @@ public class EmployeeRepository(ApplicationDbContext context) : Repository<Emplo
         return await DbSet.FirstOrDefaultAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == EmployeeStatus.Active, cancellationToken);
     }
 
-    public async Task<Employee?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default)
+    public Task<Employee?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await DbSet
+        return DbSet
             .Include(e => e.Country)
             .Include(e => e.Department)
             .Include(e => e.Position)
@@ -58,8 +58,8 @@ public class EmployeeRepository(ApplicationDbContext context) : Repository<Emplo
         return (items, totalCount);
     }
 
-    public async Task<bool> ExistsByNationalIdAndCountryAsync(string nationalId, int countryId, CancellationToken cancellationToken = default)
+    public Task<bool> ExistsByNationalIdAndCountryAsync(string nationalId, int countryId, CancellationToken cancellationToken = default)
     {
-        return await DbSet.AnyAsync(e => e.NationalId == nationalId && e.CountryId == countryId, cancellationToken);
+        return DbSet.AnyAsync(e => e.NationalId == nationalId && e.CountryId == countryId, cancellationToken);
     }
 }

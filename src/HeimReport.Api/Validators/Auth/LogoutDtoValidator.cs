@@ -10,5 +10,5 @@ public class LogoutDtoValidator : AbstractValidator<LogoutDto>
         RuleFor(x => x.RefreshToken)
             .NotEmpty().WithMessage("RefreshToken is required.")
             .MaximumLength(255).WithMessage("RefreshToken must not exceed 255 characters.");
-    } 
+    }
 }

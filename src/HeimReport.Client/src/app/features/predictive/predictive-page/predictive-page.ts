@@ -8,13 +8,14 @@ import { JourneyFlowComponent } from './components/journey-flow/journey-flow';
 import { RiskDistributionComponent } from './components/risk-distribution/risk-distribution';
 import { TrendChartComponent } from './components/trend-chart/trend-chart';
 import { EmployeesAtRiskTableComponent } from './components/employees-at-risk-table/employees-at-risk-table';
+import { PageBackgroundComponent } from "../../../shared/components/page-background/page-background";
 @Component({
-    selector: "app-dashboard-page",
+    selector: "app-predictive-page",
     standalone: true,
     imports: [
     SidebarComponent, TopbarComponent, MetricCardComponent, ChurnDriversComponent,
-    JourneyFlowComponent, RiskDistributionComponent, TrendChartComponent, EmployeesAtRiskTableComponent, ButtonComponent ],
-    templateUrl: "./dashboard-page.html",
-    styleUrls: ["./dashboard-page.css"]
+    JourneyFlowComponent, RiskDistributionComponent, TrendChartComponent, EmployeesAtRiskTableComponent, ButtonComponent, PageBackgroundComponent ],
+    templateUrl: "./predictive-page.html",
+   
 })
-export class DashboardPageComponent {}
+export class PredictivePageComponent {}

@@ -1,0 +1,40 @@
+<div class="bg-[#F8FAFC]/75 backdrop-blur-xl rounded-3xl p-6 border border-white shadow-[0_10px_30px_-12px_rgba(13,13,13,0.08)]">
+  <div class="flex justify-between items-center mb-6">
+    <h3 class="text-xs uppercase tracking-wider text-[#6b7686] font-semibold">Directorio de Empleados</h3>
+  </div>
+
+  <div class="overflow-x-auto rounded-2xl border border-[#E7ECF3]">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="border-b border-[#E7ECF3] bg-[#F8FAFC]">
+          <th class="p-4 text-xs uppercase tracking-wider text-[#6b7686]">ID Empleado</th>
+          <th class="p-4 text-xs uppercase tracking-wider text-[#6b7686]">Rol & Depto</th>
+          <th class="p-4 text-xs uppercase tracking-wider text-[#6b7686] text-center">Desempeño</th>
+          <th class="p-4 text-xs uppercase tracking-wider text-[#6b7686] text-center">Riesgo de abandono</th>
+          <th class="p-4 text-xs uppercase tracking-wider text-[#6b7686] text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[#E7ECF3]">
+        <tr class="hover:bg-[#E7ECF3]/40 transition-colors">
+          <td class="p-4">
+            <span class="font-bold text-[#0F172A]">EMP-4829</span>
+          </td>
+          <td class="p-4">
+            <span class="text-[#0F172A]">Analista de Datos Senior</span>
+            <p class="text-xs text-[#6b7686]">Departamento de Tecnología</p>
+          </td>
+          <td class="p-4 text-center">
+            <span class="material-symbols-outlined text-[#0F172A]">trending_up</span>
+          </td>
+          <td class="p-4 text-center">
+            <app-status-badge label="Alto Riesgo" variant="danger" />
+          </td>
+          <td class="p-4 text-right">
+            <app-button variant="outline-dark">Modificar</app-button>
+          </td>
+        </tr>
+        <!-- repites la fila para cada empleado, estático por ahora -->
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -17,7 +17,7 @@ public class AttritionFactorConfiguration : IEntityTypeConfiguration<AttritionFa
             .HasMaxLength(150);
         builder.Property(x => x.ContributionScore)
             .IsRequired();
-        
+
         builder.HasOne(x => x.AttritionPrediction)
             .WithMany()
             .HasForeignKey(x => x.AttritionPredictionId)

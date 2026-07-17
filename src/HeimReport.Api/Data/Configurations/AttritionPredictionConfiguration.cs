@@ -22,7 +22,7 @@ public class AttritionPredictionConfiguration : IEntityTypeConfiguration<Attriti
             .IsRequired();
 
         builder.HasIndex(x => new { x.EmployeeId, x.PredictionDate });
-        
+
         builder.HasOne(x => x.Employee)
             .WithMany()
             .HasForeignKey(x => x.EmployeeId)

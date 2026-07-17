@@ -10,11 +10,9 @@ public class Repository<T>(ApplicationDbContext context) : IRepository<T>
 
     protected DbSet<T> DbSet { get; } = context.Set<T>();
 
-    public async Task<T?> GetByIdAsync(
-        int id,
-        CancellationToken cancellationToken = default)
+    public Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await DbSet.FindAsync([id], cancellationToken);
+        return DbSet.FindAsync([id], cancellationToken).AsTask();
     }
 
     public IQueryable<T> Query()
@@ -22,11 +20,10 @@ public class Repository<T>(ApplicationDbContext context) : IRepository<T>
         return DbSet;
     }
 
-    public async Task AddAsync(
-        T entity,
-        CancellationToken cancellationToken = default)
+    public Task AddAsync(T entity, CancellationToken cancellationToken = default)
     {
-        await DbSet.AddAsync(entity, cancellationToken);
+        DbSet.Add(entity);
+        return Task.CompletedTask;
     }
 
     public void Update(T entity)
@@ -39,9 +36,8 @@ public class Repository<T>(ApplicationDbContext context) : IRepository<T>
         DbSet.Remove(entity);
     }
 
-    public async Task<int> SaveChangesAsync(
-        CancellationToken cancellationToken = default)
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return await Context.SaveChangesAsync(cancellationToken);
+        return Context.SaveChangesAsync(cancellationToken);
     }
 }
