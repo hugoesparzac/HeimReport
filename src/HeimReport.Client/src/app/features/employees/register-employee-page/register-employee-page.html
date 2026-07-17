@@ -1,0 +1,118 @@
+<app-sidebar />
+<app-topbar />
+
+<app-page-background>
+  <div class="mb-8">
+    <h2 class="text-4xl font-bold tracking-tight text-[#0F172A] mb-2">Ingreso de Empleado</h2>
+    <p class="text-[15px] text-[#0F172A]">Registra los datos para dar de alta a un nuevo colaborador en el sistema.</p>
+  </div>
+
+  <form>
+    <div class="bg-[#F8FAFC]/75 backdrop-blur-xl rounded-3xl border border-white shadow-[0_10px_30px_-12px_rgba(13,13,13,0.08)] p-8 md:p-10">
+      <app-profile-photo-upload />
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10">
+        <!-- Columna 1 -->
+        <div class="space-y-12">
+          <app-form-section icon="person" title="Datos Personales">
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="nombres">Nombres</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="nombres" placeholder="Ej. Juan Carlos" type="text" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="apellidos">Apellidos</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="apellidos" placeholder="Ej. Pérez Gómez" type="text" />
+            </div>
+            <div class="space-y-1 sm:col-span-2">
+              <label class="text-sm text-[#0F172A]" for="correo">Correo Electrónico</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="correo" placeholder="juan.perez@empresa.com" type="email" />
+            </div>
+            <div class="space-y-1 sm:col-span-2">
+              <label class="text-sm text-[#0F172A]" for="id_empleado">ID de Empleado / Documento</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="id_empleado" placeholder="Ej. 123456789" type="text" />
+            </div>
+          </app-form-section>
+
+          <app-form-section icon="account_tree" title="Estructura Organizacional">
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="cargo">Cargo / Puesto</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="cargo" placeholder="Ej. Desarrollador Senior" type="text" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="rol">Rol en Sistema</label>
+              <select class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="rol">
+                <option value="empleado">Empleado Base</option>
+                <option value="manager">Manager / Líder</option>
+                <option value="hr">Recursos Humanos</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div class="space-y-1 sm:col-span-2">
+              <label class="text-sm text-[#0F172A]" for="jefe_directo">Jefe Directo</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="jefe_directo" placeholder="Buscar supervisor..." type="text" />
+            </div>
+          </app-form-section>
+        </div>
+
+        <!-- Columna 2 -->
+        <div class="space-y-8">
+          <app-form-section icon="work" title="Información Contractual">
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="fecha_contratacion">Fecha de Contratación</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="fecha_contratacion" type="date" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="fecha_fin">Fecha Fin Contrato</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="fecha_fin" type="date" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="tipo_contrato">Tipo de Contrato</label>
+              <select class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="tipo_contrato">
+                <option value="indefinido">Indefinido</option>
+                <option value="temporal">Temporal</option>
+                <option value="practicas">Prácticas</option>
+                <option value="freelance">Freelance</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="estado">Estado</label>
+              <select class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="estado">
+                <option value="activo">Activo</option>
+                <option value="onboarding">En Onboarding</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="pais">País</label>
+              <select class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="pais">
+                <option value="mx">México</option>
+                <option value="co">Colombia</option>
+                <option value="es">España</option>
+                <option value="us">Estados Unidos</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="depto">Departamento / Región</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="depto" placeholder="Ej. Ciudad de México" type="text" />
+            </div>
+          </app-form-section>
+
+          <app-form-section icon="key" title="Credenciales">
+            <div class="space-y-1">
+              <label class="text-sm text-[#0F172A]" for="usuario">Usuario</label>
+              <input class="w-full bg-transparent border-0 border-b border-[#E7ECF3] focus:outline-none focus:border-[#0F172A] text-[#0F172A] font-medium py-1" id="usuario" placeholder="jperez" type="text" />
+            </div>
+          </app-form-section>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 flex items-center justify-end gap-4">
+      <app-button variant="secondary" type="button">Cancelar</app-button>
+      <app-button variant="primary" type="submit">
+        <span class="material-symbols-outlined text-[18px]">save</span>
+        Guardar Empleado
+      </app-button>
+    </div>
+  </form>
+</app-page-background>
