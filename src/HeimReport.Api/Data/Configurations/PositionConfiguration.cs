@@ -19,6 +19,6 @@ public class PositionConfiguration : IEntityTypeConfiguration<Position>
             .IsRequired();
         builder.HasIndex(x => x.Title)
             .IsUnique();
-        builder.HasIndex(x =>  x.CareerLevel);    
+        builder.HasIndex(x =>  x.CareerLevel);
     }
 }

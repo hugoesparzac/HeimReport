@@ -3,13 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Data;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-    {
-        
-    }
-    
     public DbSet<Answer> Answers => Set<Answer>();
     public DbSet<AttritionFactor> AttritionFactors => Set<AttritionFactor>();
     public DbSet<AttritionPrediction> AttritionPredictions => Set<AttritionPrediction>();

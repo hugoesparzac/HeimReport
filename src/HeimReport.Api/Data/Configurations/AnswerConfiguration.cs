@@ -23,7 +23,7 @@ public class AnswerConfiguration : IEntityTypeConfiguration<Answer>
 
         builder.HasIndex(x => new { x.SurveyInstanceId, x.QuestionId })
             .IsUnique();
-        
+
         builder.HasOne(a => a.SurveyInstance)
             .WithMany()
             .HasForeignKey(a => a.SurveyInstanceId)

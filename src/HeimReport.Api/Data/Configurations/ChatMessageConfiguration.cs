@@ -19,7 +19,7 @@ public class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMessage>
             .HasMaxLength(2000);
         builder.Property(x => x.SentAt)
             .IsRequired();
-        
+
         builder.HasOne(a => a.ChatSession)
             .WithMany()
             .HasForeignKey(a => a.ChatSessionId)

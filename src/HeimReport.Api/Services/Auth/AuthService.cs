@@ -167,7 +167,7 @@ public sealed partial class AuthService(
         {
             throw new InvalidOperationException(
                 $"Cannot generate token: RefreshToken with Id {storedToken.Id} was loaded without its related User/Employee. " +
-                $"Ensure the query includes .Include(rt => rt.User).ThenInclude(u => u.Employee).");
+                "Ensure the query includes .Include(rt => rt.User).ThenInclude(u => u.Employee).");
         }
 
         var newAccessToken = jwtProvider.GenerateToken(storedToken.User);
@@ -228,7 +228,7 @@ public sealed partial class AuthService(
         }
 
         var user = await userRepository.GetByEmployeeIdAsync(employee.Id, cancellationToken);
-        if (user is null || user.IsEmailVerified)
+        if (user?.IsEmailVerified is not false)
         {
             return;
         }

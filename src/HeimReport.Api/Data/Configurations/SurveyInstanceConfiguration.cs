@@ -24,7 +24,7 @@ public class SurveyInstanceConfiguration : IEntityTypeConfiguration<SurveyInstan
         builder.HasIndex(x => new { x.EmployeeId, x.Status });
         builder.HasIndex(x => x.DueDate);
         builder.HasIndex(x => x.SurveyTemplateId);
-        
+
         builder.HasOne(x => x.Employee)
             .WithMany()
             .HasForeignKey(x => x.EmployeeId)

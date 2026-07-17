@@ -21,7 +21,7 @@ public class RecommendationConfiguration : IEntityTypeConfiguration<Recommendati
             .IsRequired();
         builder.Property(x => x.CreatedAt)
             .IsRequired();
-        
+
         builder.HasOne(x => x.AttritionPrediction)
             .WithMany()
             .HasForeignKey(x => x.AttritionPredictionId)

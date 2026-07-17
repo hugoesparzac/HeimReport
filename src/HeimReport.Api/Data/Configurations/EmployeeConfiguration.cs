@@ -42,7 +42,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .IsRequired();
         builder.Property(x => x.CreatedAt)
             .IsRequired();
-        
+
         builder.HasIndex(x => x.NormalizedEmail)
             .IsUnique();
         builder.HasIndex(x => new { x.NationalId, x.CountryId })
@@ -52,7 +52,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.HasIndex(x => x.PositionId);
         builder.HasIndex(x => x.ManagerId);
         builder.HasIndex(x => x.HireDate);
-        
+
         builder.HasOne(x => x.Country)
             .WithMany()
             .HasForeignKey(x => x.CountryId)

@@ -4,7 +4,7 @@ using HeimReport.Api.Entities;
 namespace HeimReport.Api.Mappers;
 
 public static class QuestionMapper
-{ 
+{
     public static Question ToEntity(this QuestionCreateDto dto)
     {
         return new Question
@@ -22,5 +22,3 @@ public static class QuestionMapper
         question.OrderIndex = dto.OrderIndex;
     }
 }
-
-    

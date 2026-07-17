@@ -1,6 +1,6 @@
 ﻿using HeimReport.Api.Entities;
 
-namespace HeimReport.Api.Repositories.Catalogs;
+namespace HeimReport.Api.Repositories.Positions;
 
 public interface IPositionRepository : IRepository<Position>
 {

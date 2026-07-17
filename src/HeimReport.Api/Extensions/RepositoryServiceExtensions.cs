@@ -1,10 +1,9 @@
 using HeimReport.Api.Repositories;
 using HeimReport.Api.Repositories.Auth;
-using HeimReport.Api.Repositories.Catalogs;
-using HeimReport.Api.Repositories.Catalogs.Countries;
-using HeimReport.Api.Repositories.Catalogs.Departments;
-using HeimReport.Api.Repositories.Catalogs.Positions;
 using HeimReport.Api.Repositories.Employees;
+using HeimReport.Api.Repositories.Countries;
+using HeimReport.Api.Repositories.Departments;
+using HeimReport.Api.Repositories.Positions;
 
 namespace HeimReport.Api.Extensions;
 

@@ -15,7 +15,7 @@ public static class PositionMapper
             IsCritical = position.IsCritical
         };
     }
-    
+
     public static Position ToEntity(this PositionCreateUpdateDto dto)
     {
         return new Position

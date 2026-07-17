@@ -7,41 +7,33 @@ namespace HeimReport.Api.Repositories.Auth;
 public class UserRepository(ApplicationDbContext context)
     : Repository<User>(context), IUserRepository
 {
-    public async Task<User?> GetByNormalizedUsernameAsync(
-        string normalizedUsername,
-        CancellationToken cancellationToken = default)
+    public Task<User?> GetByNormalizedUsernameAsync(string normalizedUsername, CancellationToken cancellationToken = default)
     {
-        return await Context.Users
+        return Context.Users
             .Include(user => user.Employee)
             .FirstOrDefaultAsync(
                 user => user.NormalizedUsername == normalizedUsername,
                 cancellationToken);
     }
 
-    public async Task<User?> GetByEmailVerificationTokenHashAsync(
-        string tokenHash,
-        CancellationToken cancellationToken = default)
+    public Task<User?> GetByEmailVerificationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
     {
-        return await Context.Users
+        return Context.Users
             .Include(user => user.Employee)
             .FirstOrDefaultAsync(
                 user => user.EmailVerificationTokenHash == tokenHash,
                 cancellationToken);
     }
 
-    public async Task<User?> GetByEmployeeIdAsync(
-        int employeeId,
-        CancellationToken cancellationToken = default)
+    public Task<User?> GetByEmployeeIdAsync(int employeeId, CancellationToken cancellationToken = default)
     {
-        return await Context.Users
+        return Context.Users
             .FirstOrDefaultAsync(user => user.EmployeeId == employeeId, cancellationToken);
     }
 
-    public async Task<User?> GetByUsernameOrEmailAsync(
-        string normalizedInput,
-        CancellationToken cancellationToken = default)
+    public Task<User?> GetByUsernameOrEmailAsync(string normalizedInput, CancellationToken cancellationToken = default)
     {
-        return await Context.Users
+        return Context.Users
             .Include(user => user.Employee)
             .FirstOrDefaultAsync(
                 user => user.NormalizedUsername == normalizedInput
