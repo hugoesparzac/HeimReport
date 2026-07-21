@@ -8,7 +8,9 @@
       <h2 class="text-4xl font-bold tracking-tight text-[#0F172A] mb-2">Empleados</h2>
       <p class="text-[15px] text-[#6b7686]">Gestiona tu fuerza laboral y analiza la retención.</p>
     </div>
-    <app-button variant="outline-dark">Ver Info</app-button>
+    <app-button variant="outline-dark" (clicked)="goToDetails()">
+      Ver Info
+    </app-button>
   </div>
 
   <div class="col-span-12 xl:col-span-4 flex justify-end items-end">
