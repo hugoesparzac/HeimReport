@@ -15,9 +15,12 @@ public class AuthController(IAuthService authService) : ControllerBase
         [FromBody] UserRegistrationDto dto,
         CancellationToken cancellationToken)
     {
-        await authService.RegisterAsync(dto, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created,
-            new { message = "Registration successful. Please check your email to verify your account." });
+        var result = await authService.RegisterAsync(dto, cancellationToken);
+        return CreatedAtAction(
+            actionName: nameof(UsersController.GetById),
+            controllerName: "Users",
+            routeValues: new { id = result.Id },
+            value: result);
     }
 
     [AllowAnonymous]
