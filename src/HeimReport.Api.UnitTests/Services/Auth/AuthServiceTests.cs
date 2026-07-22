@@ -79,10 +79,16 @@ public class AuthServiceTests
         _tokenHasher.Setup(h => h.Hash("raw-token")).Returns("hashed-token");
 
         // Act
-        await _sut.RegisterAsync(dto);
+        var result = await _sut.RegisterAsync(dto);
 
         // Assert
         var normalizedUsername = dto.Username.ToUpperInvariant();
+
+        Assert.NotNull(result);
+        Assert.Equal(dto.Username, result.Username);
+        Assert.Equal(dto.PreferredLanguage, result.PreferredLanguage);
+        Assert.False(result.IsEmailVerified);
+        Assert.Null(result.LastLoginAt);
 
         _userRepository.Verify(r => r.AddAsync(
             It.Is<User>(u =>

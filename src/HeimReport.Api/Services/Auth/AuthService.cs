@@ -24,7 +24,7 @@ public sealed partial class AuthService(
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private static readonly TimeSpan VerificationTokenLifetime = TimeSpan.FromHours(24);
 
-    public async Task RegisterAsync(UserRegistrationDto dto, CancellationToken cancellationToken = default)
+    public async Task<UserResponseDto> RegisterAsync(UserRegistrationDto dto, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = dto.Email.Trim().ToUpperInvariant();
 
@@ -66,6 +66,16 @@ public sealed partial class AuthService(
             cancellationToken);
 
         LogUserRegistered(employee.Id);
+
+        return user.ToResponseDto();
+    }
+
+    public async Task<UserResponseDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var user = await userRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw NotFoundException.ForEntity<User>(id);
+
+        return user.ToResponseDto();
     }
 
     public async Task VerifyEmailAsync(string rawToken, CancellationToken cancellationToken = default)

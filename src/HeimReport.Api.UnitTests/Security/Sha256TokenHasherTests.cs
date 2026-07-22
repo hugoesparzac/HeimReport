@@ -10,7 +10,7 @@ public class Sha256TokenHasherTests
     public void Hash_ShouldReturnConsistentHash_ForSameInput()
     {
         // Arrange
-        var rawToken = "some-raw-token-value";
+        const string rawToken = "some-raw-token-value";
 
         // Act
         var hash1 = _sut.Hash(rawToken);
@@ -24,8 +24,8 @@ public class Sha256TokenHasherTests
     public void Hash_ShouldReturnDifferentHashes_ForDifferentInputs()
     {
         // Arrange
-        var token1 = "token-one";
-        var token2 = "token-two";
+        const string token1 = "token-one";
+        const string token2 = "token-two";
 
         // Act
         var hash1 = _sut.Hash(token1);
