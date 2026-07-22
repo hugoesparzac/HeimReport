@@ -1,0 +1,23 @@
+using FluentValidation;
+using HeimReport.Api.DTOs.SurveyTemplates;
+
+namespace HeimReport.Api.Validators.SurveyTemplates;
+
+public class SurveyTemplateWithQuestionsDtoValidator : AbstractValidator<SurveyTemplateWithQuestionsDto>
+{
+    public SurveyTemplateWithQuestionsDtoValidator()
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Name is required")
+            .MaximumLength(100).WithMessage("Name must not exceed 100 characters");
+
+        RuleFor(x => x.MilestoneMonths)
+            .GreaterThan(0).WithMessage("Milestone Months must be a positive integer");
+
+        RuleFor(x => x.Description)
+            .MaximumLength(255).WithMessage("Description must not exceed 255 characters");
+
+        RuleForEach(x => x.Questions)
+            .SetValidator(new QuestionCreateNestedDtoValidator());
+    }
+}
