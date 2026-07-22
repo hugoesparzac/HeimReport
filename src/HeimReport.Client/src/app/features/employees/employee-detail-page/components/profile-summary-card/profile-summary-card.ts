@@ -6,6 +6,9 @@ import { ButtonComponent } from '../../../../../shared/components/button/button'
   standalone: true,
   imports: [ButtonComponent],
   templateUrl: './profile-summary-card.html',
+   host: {
+    class: 'block h-full',
+  },
 })
 export class ProfileSummaryCardComponent {
   

@@ -5,5 +5,8 @@ import { Component } from '@angular/core';
   standalone: true,
   imports: [],
   templateUrl: './lifecycle-metrics-card.html',
+   host: {
+    class: 'block h-full',
+  },
 })
 export class LifecycleMetricsCardComponent {}
