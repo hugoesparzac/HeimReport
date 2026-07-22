@@ -8,11 +8,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Answer> Answers => Set<Answer>();
     public DbSet<AttritionFactor> AttritionFactors => Set<AttritionFactor>();
     public DbSet<AttritionPrediction> AttritionPredictions => Set<AttritionPrediction>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeeJobHistory> EmployeeJobHistories => Set<EmployeeJobHistory>();
     public DbSet<MlModelVersion> MlModelVersions => Set<MlModelVersion>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Position> Positions => Set<Position>();

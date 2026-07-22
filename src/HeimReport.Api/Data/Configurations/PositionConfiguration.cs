@@ -17,6 +17,10 @@ public class PositionConfiguration : IEntityTypeConfiguration<Position>
             .IsRequired();
         builder.Property(x => x.IsCritical)
             .IsRequired();
+        builder.Property(x => x.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
+
         builder.HasIndex(x => x.Title)
             .IsUnique();
         builder.HasIndex(x =>  x.CareerLevel);

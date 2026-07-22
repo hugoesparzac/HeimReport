@@ -10,7 +10,8 @@ public static class DepartmentMapper
         return new DepartmentResponseDto
         {
             Id = department.Id,
-            Name = department.Name
+            Name = department.Name,
+            IsActive = department.IsActive
         };
     }
 
@@ -19,6 +20,7 @@ public static class DepartmentMapper
         return new Department
         {
             Name = dto.Name,
+            IsActive = dto.IsActive
         };
     }
 }

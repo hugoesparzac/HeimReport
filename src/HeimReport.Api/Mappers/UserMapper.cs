@@ -17,8 +17,7 @@ public static class UserMapper
             Role = SystemRole.Employee,
             IsEmailVerified = false,
             IsActive = true,
-            PreferredLanguage = dto.PreferredLanguage,
-            CreatedAt = DateTime.UtcNow
+            PreferredLanguage = dto.PreferredLanguage
         };
     }
 

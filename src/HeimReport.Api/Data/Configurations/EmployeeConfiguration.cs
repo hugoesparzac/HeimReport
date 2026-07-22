@@ -26,6 +26,8 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(x => x.NationalId)
             .IsRequired()
             .HasMaxLength(50);
+        builder.Property(x => x.BirthDate)
+            .IsRequired();
         builder.Property(x => x.HireDate)
             .IsRequired();
         builder.Property(x => x.ContractType)
@@ -34,6 +36,8 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .IsRequired()
             .HasDefaultValue(EmployeeStatus.Active)
             .HasSentinel(EmployeeStatus.Active);
+        builder.Property(x => x.CurrentSalary)
+            .IsRequired();
         builder.Property(x => x.CountryId)
             .IsRequired();
         builder.Property(x => x.DepartmentId)
@@ -68,6 +72,14 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.HasOne(x => x.Manager)
             .WithMany(x => x.DirectReports)
             .HasForeignKey(x => x.ManagerId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.UpdatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.UpdatedBy)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

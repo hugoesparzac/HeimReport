@@ -7,4 +7,3 @@ public record QuestionOptionUpdateDto
     public string? Value { get; init; }
     public required int OrderIndex { get; init; }
 }
-

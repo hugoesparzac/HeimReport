@@ -8,4 +8,3 @@ public record SurveyTemplateCreateUpdateDto
     public string? Description { get; init; }
     public required bool IsActive { get; init; }
 }
-

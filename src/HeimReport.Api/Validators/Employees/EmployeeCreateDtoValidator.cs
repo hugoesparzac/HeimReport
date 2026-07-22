@@ -1,5 +1,6 @@
 using FluentValidation;
 using HeimReport.Api.DTOs.Employees;
+
 namespace HeimReport.Api.Validators.Employees;
 
 public class EmployeeCreateDtoValidator : AbstractValidator<EmployeeCreateDto>
@@ -9,23 +10,23 @@ public class EmployeeCreateDtoValidator : AbstractValidator<EmployeeCreateDto>
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("First Name is required")
             .MaximumLength(50);
-
         RuleFor(x => x.LastName)
             .NotEmpty().WithMessage("Last Name is required")
             .MaximumLength(100);
-
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")
             .EmailAddress().WithMessage("Invalid email format")
             .MaximumLength(100);
-
         RuleFor(x => x.NationalId)
             .NotEmpty().WithMessage("National ID is required")
             .MaximumLength(50);
 
+        RuleFor(x => x.BirthDate)
+            .NotEmpty().WithMessage("Birth Date is required")
+            .LessThan(DateTime.UtcNow.AddYears(-15)).WithMessage("Employee must be at least 15 years old");
+
         RuleFor(x => x.HireDate)
-            .NotEmpty().WithMessage("Hire Date is required")
-            .LessThanOrEqualTo(_ => DateTime.UtcNow).WithMessage("Hire Date cannot be in the future");
+            .NotEmpty().WithMessage("Hire Date is required");
 
         RuleFor(x => x.ContractType)
             .IsInEnum().WithMessage("Invalid Contract Type");
@@ -34,12 +35,13 @@ public class EmployeeCreateDtoValidator : AbstractValidator<EmployeeCreateDto>
             .GreaterThan(x => x.HireDate).WithMessage("Contract End Date must be after Hire Date")
             .When(x => x.ContractEndDate.HasValue);
 
+        RuleFor(x => x.CurrentSalary)
+            .GreaterThanOrEqualTo(0).WithMessage("Salary cannot be negative");
+
         RuleFor(x => x.CountryId)
             .GreaterThan(0).WithMessage("Country ID is required");
-
         RuleFor(x => x.DepartmentId)
             .GreaterThan(0).WithMessage("Department ID is required");
-
         RuleFor(x => x.PositionId)
             .GreaterThan(0).WithMessage("Position ID is required");
 

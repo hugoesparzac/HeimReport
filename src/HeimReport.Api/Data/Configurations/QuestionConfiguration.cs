@@ -19,7 +19,7 @@ public class QuestionConfiguration : IEntityTypeConfiguration<Question>
             .IsRequired();
         builder.Property(x => x.OrderIndex)
             .IsRequired();
-        
+
         builder.HasOne(x => x.SurveyTemplate)
             .WithMany()
             .HasForeignKey(x => x.SurveyTemplateId)

@@ -8,7 +8,7 @@ public class DepartmentCreateUpdateDtoValidator : AbstractValidator<DepartmentCr
     public DepartmentCreateUpdateDtoValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(100).WithMessage("Name cannot exceed 100 characters");
+        .NotEmpty().WithMessage("Name is required.")
+        .MaximumLength(100).WithMessage("Name cannot exceed 100 characters");
     }
 }

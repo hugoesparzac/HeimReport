@@ -7,6 +7,8 @@ public class Answer
     public SurveyInstance? SurveyInstance { get; set; }
     public required int QuestionId { get; set; }
     public Question? Question { get; set; }
+    public int? QuestionOptionId { get; set; }
+    public QuestionOption? QuestionOption { get; set; }
     public string? RawText { get; set; }
     public string? NormalizedText { get; set; }
     public float? SentimentScore { get; set; }

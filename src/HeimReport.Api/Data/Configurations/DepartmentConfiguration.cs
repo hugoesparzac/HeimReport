@@ -13,6 +13,10 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
         builder.Property(p => p.Name)
             .IsRequired()
             .HasMaxLength(100);
+        builder.Property(x => x.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
+
         builder.HasIndex(p => p.Name)
             .IsUnique();
     }

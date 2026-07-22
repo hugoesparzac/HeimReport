@@ -1,34 +1,31 @@
-﻿
-using HeimReport.Api.DTOs.SurveyTemplates;
+﻿using HeimReport.Api.DTOs.SurveyTemplates;
 using HeimReport.Api.Entities;
 
 namespace HeimReport.Api.Mappers;
 
 public static class SurveyTemplateMapper
 {
-
-    public static SurveyTemplate ToEntity(this SurveyTemplateCreateUpdateDto SurveyTemplateDto)
+    public static SurveyTemplate ToEntity(this SurveyTemplateCreateUpdateDto dto)
     {
         return new SurveyTemplate
         {
-            Name = SurveyTemplateDto.Name,
-            MilestoneMonths = SurveyTemplateDto.MilestoneMonths,
-            Description = SurveyTemplateDto.Description,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            Name = dto.Name,
+            MilestoneMonths = dto.MilestoneMonths,
+            Description = dto.Description,
+            IsActive = dto.IsActive
         };
     }
 
-    public static SurveyTemplateResponseDto ToResponseDto(this SurveyTemplate SurveyTemplate)
+    public static SurveyTemplateResponseDto ToResponseDto(this SurveyTemplate template)
     {
         return new SurveyTemplateResponseDto
         {
-            Id = SurveyTemplate.Id,
-            Name = SurveyTemplate.Name,
-            MilestoneMonths = SurveyTemplate.MilestoneMonths,
-            Description = SurveyTemplate.Description,
-            IsActive = SurveyTemplate.IsActive,
-            CreatedAt = SurveyTemplate.CreatedAt
+            Id = template.Id,
+            Name = template.Name,
+            MilestoneMonths = template.MilestoneMonths,
+            Description = template.Description,
+            IsActive = template.IsActive,
+            CreatedAt = template.CreatedAt
         };
     }
 }

@@ -16,9 +16,22 @@ public static class QuestionMapper
         };
     }
 
+    public static QuestionResponseDto ToResponseDto(this Question question)
+    {
+        return new QuestionResponseDto
+        {
+            Id = question.Id,
+            SurveyTemplateId = question.SurveyTemplateId,
+            Text = question.Text,
+            QuestionType = question.QuestionType,
+            OrderIndex = question.OrderIndex
+        };
+    }
+
     public static void ApplyUpdate(this Question question, QuestionUpdateDto dto)
     {
         question.Text = dto.Text;
         question.OrderIndex = dto.OrderIndex;
+        question.QuestionType = dto.QuestionType;
     }
 }

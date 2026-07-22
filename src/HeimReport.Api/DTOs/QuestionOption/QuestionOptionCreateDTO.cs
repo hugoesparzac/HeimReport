@@ -5,6 +5,4 @@ public record QuestionOptionCreateDto
     public required string Text { get; init; }
     public string? Value { get; init; }
     public required int OrderIndex { get; init; }
-
 }
-

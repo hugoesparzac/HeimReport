@@ -8,4 +8,5 @@ public class Position
     public required string Title { get; set; }
     public CareerLevel CareerLevel { get; set; }
     public bool IsCritical { get; set; }
+    public required bool IsActive { get; set; }
 }

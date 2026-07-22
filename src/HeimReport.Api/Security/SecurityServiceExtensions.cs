@@ -6,7 +6,7 @@ public static class SecurityServiceExtensions
     {
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenHasher, Sha256TokenHasher>();
-        
+
         return services;
     }
 }
