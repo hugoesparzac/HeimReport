@@ -1,0 +1,22 @@
+<app-sidebar />
+<app-topbar />
+
+<app-page-background>
+  <div class="mb-8 flex items-center gap-2 text-[#6b7686]">
+    <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+    <span class="text-[15px]">Empleados</span>
+    <span class="text-[#E7ECF3]">/</span>
+    <span class="text-[15px] text-[#0F172A] font-medium">Elena Rostova</span>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+    <app-profile-summary-card class="col-span-1 md:col-span-4" />
+    <app-attrition-risk-gauge class="col-span-1 md:col-span-4" />
+    <app-lifecycle-metrics-card class="col-span-1 md:col-span-4" />
+
+    <app-comprehensive-data-card class="col-span-1 md:col-span-8" />
+    <app-sentiment-trend-card class="col-span-1 md:col-span-4" />
+
+    <app-termination-danger-zone class="col-span-1 md:col-span-12 mt-2" />
+  </div>
+</app-page-background>

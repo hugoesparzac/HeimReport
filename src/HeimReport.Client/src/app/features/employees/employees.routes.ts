@@ -8,5 +8,9 @@ export const EMPLOYEES_ROUTES: Routes = [
    {
     path: 'register',
     loadComponent: () => import('./register-employee-page/register-employee-page').then(m => m.RegisterEmployeePageComponent)
+  },
+  {
+    path: 'details',
+    loadComponent: () => import('./employee-detail-page/employee-detail-page').then(m => m.EmployeeDetailPageComponent)
   }
 ];

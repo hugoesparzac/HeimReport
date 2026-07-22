@@ -29,4 +29,8 @@ export class EmployeesPageComponent {
   goToRegister(): void {
     this.router.navigate(['/employees/register']);
   }
+
+   goToDetails(): void {
+    this.router.navigate(['/employees/details']);
+  }
 }

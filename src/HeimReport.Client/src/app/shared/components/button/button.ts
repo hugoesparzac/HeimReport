@@ -8,7 +8,7 @@ import { Component, input, output } from '@angular/core';
   styleUrl: './button.css',
 })
 export class ButtonComponent {
-  variant = input<'primary' | 'secondary' | 'outline-dark'>('primary');
+  variant = input<'primary' | 'secondary' | 'outline-dark' | 'danger'>('primary');
 
   type = input<'button' | 'submit'>('button');
   
@@ -17,6 +17,8 @@ export class ButtonComponent {
   fullWidth = input<boolean>(false); 
   
   clicked = output<void>();
+
+
 
   onClick() {
     if (!this.disabled()) {
