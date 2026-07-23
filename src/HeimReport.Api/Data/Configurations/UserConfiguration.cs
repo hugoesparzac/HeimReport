@@ -32,12 +32,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
-        builder.Property(x => x.CreatedAt)
-            .IsRequired();
         builder.Property(x => x.PreferredLanguage)
             .IsRequired()
             .HasDefaultValue(Language.English)
             .HasSentinel(Language.English);
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
 
         builder.HasIndex(x => x.EmployeeId)
             .IsUnique();
@@ -48,5 +48,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithMany()
             .HasForeignKey(x => x.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.UpdatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.UpdatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

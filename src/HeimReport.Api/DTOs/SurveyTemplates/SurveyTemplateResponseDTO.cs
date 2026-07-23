@@ -10,4 +10,3 @@ public record SurveyTemplateResponseDto
     public required bool IsActive { get; init; }
     public required DateTime CreatedAt { get; init; }
 }
-

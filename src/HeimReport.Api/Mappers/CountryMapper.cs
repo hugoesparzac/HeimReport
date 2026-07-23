@@ -10,7 +10,8 @@ public static class CountryMapper
         return new CountryResponseDto
         {
             Id = country.Id,
-            Name = country.Name
+            Name = country.Name,
+            IsActive = country.IsActive
         };
     }
 
@@ -19,6 +20,7 @@ public static class CountryMapper
         return new Country
         {
             Name = dto.Name,
+            IsActive = dto.IsActive
         };
     }
 }

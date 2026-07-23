@@ -16,7 +16,7 @@ public sealed class JwtProvider(IOptions<JwtOptions> jwtOptions) : IJwtProvider
         {
             throw new InvalidOperationException(
                 $"Cannot generate token: User with Id {user.Id} was loaded without its related Employee. " +
-                $"Ensure the query includes .Include(u => u.Employee).");
+                "Ensure the query includes .Include(u => u.Employee).");
         }
 
         var claims = new[]

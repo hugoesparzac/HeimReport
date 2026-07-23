@@ -1,5 +1,5 @@
-using HeimReport.Api.DTOs.Auth;
-using HeimReport.Api.Services.Auth;
+using HeimReport.Api.DTOs.Users;
+using HeimReport.Api.Services.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +7,7 @@ namespace HeimReport.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(IAuthService authService) : ControllerBase
+public class AuthController(IUserService userService) : ControllerBase
 {
     [AllowAnonymous]
     [HttpPost("register")]
@@ -15,7 +15,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         [FromBody] UserRegistrationDto dto,
         CancellationToken cancellationToken)
     {
-        var result = await authService.RegisterAsync(dto, cancellationToken);
+        var result = await userService.RegisterAsync(dto, cancellationToken);
         return CreatedAtAction(
             actionName: nameof(UsersController.GetById),
             controllerName: "Users",
@@ -29,7 +29,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         [FromQuery] string token,
         CancellationToken cancellationToken)
     {
-        await authService.VerifyEmailAsync(token, cancellationToken);
+        await userService.VerifyEmailAsync(token, cancellationToken);
         return Ok(new { message = "Email verified successfully." });
     }
 
@@ -39,7 +39,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         [FromBody] ResendEmailVerificationDto dto,
         CancellationToken cancellationToken)
     {
-        await authService.ResendVerificationAsync(dto, cancellationToken);
+        await userService.ResendVerificationAsync(dto, cancellationToken);
         return Ok(new { message = "If an account with that email exists, a verification link has been sent." });
     }
 
@@ -49,7 +49,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         [FromBody] UserLoginDto dto,
         CancellationToken cancellationToken)
     {
-        var result = await authService.LoginAsync(dto, cancellationToken);
+        var result = await userService.LoginAsync(dto, cancellationToken);
         return Ok(result);
     }
 
@@ -59,7 +59,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         [FromBody] RefreshTokenRequestDto dto,
         CancellationToken cancellationToken)
     {
-        var result = await authService.RefreshAsync(dto.RefreshToken, cancellationToken);
+        var result = await userService.RefreshAsync(dto.RefreshToken, cancellationToken);
         return Ok(result);
     }
 
@@ -69,7 +69,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         [FromBody] LogoutDto dto,
         CancellationToken cancellationToken)
     {
-        await authService.LogoutAsync(dto.RefreshToken, cancellationToken);
+        await userService.LogoutAsync(dto.RefreshToken, cancellationToken);
         return NoContent();
     }
 }

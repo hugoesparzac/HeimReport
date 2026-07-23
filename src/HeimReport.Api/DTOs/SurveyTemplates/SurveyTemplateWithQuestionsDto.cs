@@ -9,4 +9,3 @@ public record SurveyTemplateWithQuestionsDto
 
     public required List<QuestionCreateNestedDto> Questions { get; init; }
 }
-

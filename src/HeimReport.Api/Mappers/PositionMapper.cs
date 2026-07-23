@@ -1,6 +1,5 @@
-using HeimReport.Api.DTOs.Positions;
 using HeimReport.Api.Entities;
-
+using HeimReport.Api.DTOs.Positions;
 namespace HeimReport.Api.Mappers;
 
 public static class PositionMapper
@@ -12,7 +11,8 @@ public static class PositionMapper
             Id = position.Id,
             Title = position.Title,
             CareerLevel = position.CareerLevel,
-            IsCritical = position.IsCritical
+            IsCritical = position.IsCritical,
+            IsActive = position.IsActive
         };
     }
 
@@ -22,7 +22,8 @@ public static class PositionMapper
         {
             Title = dto.Title,
             CareerLevel = dto.CareerLevel,
-            IsCritical = dto.IsCritical
+            IsCritical = dto.IsCritical,
+            IsActive = dto.IsActive
         };
     }
 }

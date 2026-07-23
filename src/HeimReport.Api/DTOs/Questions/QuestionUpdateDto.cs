@@ -9,4 +9,3 @@ public record QuestionUpdateDto
     public required QuestionType QuestionType { get; init; }
     public required int OrderIndex { get; init; }
 }
-

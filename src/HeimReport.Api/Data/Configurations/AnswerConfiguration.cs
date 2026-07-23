@@ -32,6 +32,10 @@ public class AnswerConfiguration : IEntityTypeConfiguration<Answer>
             .WithMany()
             .HasForeignKey(a => a.QuestionId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(a => a.QuestionOption)
+            .WithMany()
+            .HasForeignKey(a => a.QuestionOptionId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(a => a.ChatMessage)
             .WithMany()
             .HasForeignKey(a => a.ChatMessageId)

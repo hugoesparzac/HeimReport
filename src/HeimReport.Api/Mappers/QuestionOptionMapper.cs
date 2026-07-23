@@ -16,6 +16,17 @@ public static class QuestionOptionMapper
         };
     }
 
+    public static QuestionOptionResponseDto ToResponseDto(this QuestionOption option)
+    {
+        return new QuestionOptionResponseDto
+        {
+            Id = option.Id,
+            QuestionId = option.QuestionId,
+            Text = option.Text,
+            Value = option.Value,
+            OrderIndex = option.OrderIndex
+        };
+    }
 
     public static void ApplyUpdate(this QuestionOption questionOption, QuestionOptionUpdateDto dto)
     {
@@ -24,4 +35,3 @@ public static class QuestionOptionMapper
         questionOption.Value = dto.Value;
     }
 }
-

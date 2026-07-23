@@ -1,5 +1,5 @@
 using HeimReport.Api.Repositories;
-using HeimReport.Api.Repositories.Auth;
+using HeimReport.Api.Repositories.Users;
 using HeimReport.Api.Repositories.Employees;
 using HeimReport.Api.Repositories.Countries;
 using HeimReport.Api.Repositories.Departments;

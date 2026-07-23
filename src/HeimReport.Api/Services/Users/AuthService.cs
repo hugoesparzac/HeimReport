@@ -1,16 +1,16 @@
-using HeimReport.Api.DTOs.Auth;
+using HeimReport.Api.DTOs.Users;
 using HeimReport.Api.Email;
 using HeimReport.Api.Entities;
 using HeimReport.Api.Exceptions;
 using HeimReport.Api.Mappers;
-using HeimReport.Api.Repositories.Auth;
+using HeimReport.Api.Repositories.Users;
 using HeimReport.Api.Repositories.Employees;
 using HeimReport.Api.Security;
 using Microsoft.Extensions.Options;
 
-namespace HeimReport.Api.Services.Auth;
+namespace HeimReport.Api.Services.Users;
 
-public sealed partial class AuthService(
+public sealed partial class UserService(
     IEmployeeRepository employeeRepository,
     IUserRepository userRepository,
     IRefreshTokenRepository refreshTokenRepository,
@@ -19,7 +19,7 @@ public sealed partial class AuthService(
     IJwtProvider jwtProvider,
     IEmailSender emailSender,
     IOptions<JwtOptions> jwtOptions,
-    ILogger<AuthService> logger) : IAuthService
+    ILogger<UserService> logger) : IUserService
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private static readonly TimeSpan VerificationTokenLifetime = TimeSpan.FromHours(24);

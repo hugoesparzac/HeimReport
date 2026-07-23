@@ -43,6 +43,9 @@ namespace HeimReport.Api.Data.Migrations
                     b.Property<int>("QuestionId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("QuestionOptionId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("RawText")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -58,6 +61,8 @@ namespace HeimReport.Api.Data.Migrations
                     b.HasIndex("ChatMessageId");
 
                     b.HasIndex("QuestionId");
+
+                    b.HasIndex("QuestionOptionId");
 
                     b.HasIndex("SurveyInstanceId", "QuestionId")
                         .IsUnique();
@@ -121,6 +126,52 @@ namespace HeimReport.Api.Data.Migrations
                     b.HasIndex("EmployeeId", "PredictionDate");
 
                     b.ToTable("AttritionPredictions", (string)null);
+                });
+
+            modelBuilder.Entity("HeimReport.Api.Entities.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("EntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EntityName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("EntityName", "EntityId");
+
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("HeimReport.Api.Entities.ChatMessage", b =>
@@ -195,6 +246,11 @@ namespace HeimReport.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(60)
@@ -215,6 +271,11 @@ namespace HeimReport.Api.Data.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -237,6 +298,9 @@ namespace HeimReport.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("BirthDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("ContractEndDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -248,6 +312,12 @@ namespace HeimReport.Api.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("CurrentSalary")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("DepartmentId")
                         .HasColumnType("integer");
@@ -294,9 +364,17 @@ namespace HeimReport.Api.Data.Migrations
                     b.Property<DateTime?>("TerminationDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CountryId");
+
+                    b.HasIndex("CreatedBy");
 
                     b.HasIndex("DepartmentId");
 
@@ -311,10 +389,65 @@ namespace HeimReport.Api.Data.Migrations
 
                     b.HasIndex("Status");
 
+                    b.HasIndex("UpdatedBy");
+
                     b.HasIndex("NationalId", "CountryId")
                         .IsUnique();
 
                     b.ToTable("Employees", (string)null);
+                });
+
+            modelBuilder.Entity("HeimReport.Api.Entities.EmployeeJobHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChangeReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ManagerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PositionId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("Salary")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ManagerId");
+
+                    b.HasIndex("PositionId");
+
+                    b.HasIndex("StartDate");
+
+                    b.ToTable("EmployeeJobHistories", (string)null);
                 });
 
             modelBuilder.Entity("HeimReport.Api.Entities.MlModelVersion", b =>
@@ -389,6 +522,11 @@ namespace HeimReport.Api.Data.Migrations
 
                     b.Property<int>("CareerLevel")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsCritical")
                         .HasColumnType("boolean");
@@ -621,6 +759,9 @@ namespace HeimReport.Api.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("EmailVerificationTokenExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -662,6 +803,12 @@ namespace HeimReport.Api.Data.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -669,11 +816,15 @@ namespace HeimReport.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedBy");
+
                     b.HasIndex("EmployeeId")
                         .IsUnique();
 
                     b.HasIndex("NormalizedUsername")
                         .IsUnique();
+
+                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Users", (string)null);
                 });
@@ -691,6 +842,11 @@ namespace HeimReport.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("HeimReport.Api.Entities.QuestionOption", "QuestionOption")
+                        .WithMany()
+                        .HasForeignKey("QuestionOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("HeimReport.Api.Entities.SurveyInstance", "SurveyInstance")
                         .WithMany()
                         .HasForeignKey("SurveyInstanceId")
@@ -700,6 +856,8 @@ namespace HeimReport.Api.Data.Migrations
                     b.Navigation("ChatMessage");
 
                     b.Navigation("Question");
+
+                    b.Navigation("QuestionOption");
 
                     b.Navigation("SurveyInstance");
                 });
@@ -732,6 +890,16 @@ namespace HeimReport.Api.Data.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("MlModelVersion");
+                });
+
+            modelBuilder.Entity("HeimReport.Api.Entities.AuditLog", b =>
+                {
+                    b.HasOne("HeimReport.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("HeimReport.Api.Entities.ChatMessage", b =>
@@ -771,6 +939,11 @@ namespace HeimReport.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("HeimReport.Api.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("HeimReport.Api.Entities.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
@@ -788,9 +961,52 @@ namespace HeimReport.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("HeimReport.Api.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Country");
 
+                    b.Navigation("CreatedByUser");
+
                     b.Navigation("Department");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("Position");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
+            modelBuilder.Entity("HeimReport.Api.Entities.EmployeeJobHistory", b =>
+                {
+                    b.HasOne("HeimReport.Api.Entities.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HeimReport.Api.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HeimReport.Api.Entities.Employee", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HeimReport.Api.Entities.Position", "Position")
+                        .WithMany()
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Employee");
 
                     b.Navigation("Manager");
 
@@ -880,13 +1096,27 @@ namespace HeimReport.Api.Data.Migrations
 
             modelBuilder.Entity("HeimReport.Api.Entities.User", b =>
                 {
+                    b.HasOne("HeimReport.Api.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("HeimReport.Api.Entities.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("HeimReport.Api.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+
                     b.Navigation("Employee");
+
+                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("HeimReport.Api.Entities.Employee", b =>

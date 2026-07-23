@@ -1,8 +1,8 @@
-using HeimReport.Api.DTOs.Auth;
+using HeimReport.Api.DTOs.Users;
 
-namespace HeimReport.Api.Services.Auth;
+namespace HeimReport.Api.Services.Users;
 
-public interface IAuthService
+public interface IUserService
 {
     Task<UserResponseDto> RegisterAsync(UserRegistrationDto dto, CancellationToken cancellationToken = default);
     Task<UserResponseDto> GetByIdAsync(int id, CancellationToken cancellationToken = default);

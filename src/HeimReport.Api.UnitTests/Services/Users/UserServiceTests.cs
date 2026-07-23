@@ -1,21 +1,21 @@
 using System.Reflection.Metadata;
 using Bogus;
-using HeimReport.Api.DTOs.Auth;
+using HeimReport.Api.DTOs.Users;
 using HeimReport.Api.Email;
 using HeimReport.Api.Entities;
 using HeimReport.Api.Enums;
 using HeimReport.Api.Exceptions;
-using HeimReport.Api.Repositories.Auth;
+using HeimReport.Api.Repositories.Users;
 using HeimReport.Api.Repositories.Employees;
 using HeimReport.Api.Security;
-using HeimReport.Api.Services.Auth;
+using HeimReport.Api.Services.Users;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
-namespace HeimReport.Api.UnitTests.Services.Auth;
+namespace HeimReport.Api.UnitTests.Services.Users;
 
-public class AuthServiceTests
+public class UserServiceTests
 {
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
@@ -24,11 +24,11 @@ public class AuthServiceTests
     private readonly Mock<ITokenHasher> _tokenHasher = new();
     private readonly Mock<IJwtProvider> _jwtProvider = new();
     private readonly Mock<IEmailSender> _emailSender = new();
-    private readonly Mock<ILogger<AuthService>> _logger = new();
+    private readonly Mock<ILogger<UserService>> _logger = new();
 
-    private readonly AuthService _sut;
+    private readonly UserService _sut;
 
-    public AuthServiceTests()
+    public UserServiceTests()
     {
         var jwtOptions = Options.Create(new JwtOptions
         {
@@ -39,7 +39,7 @@ public class AuthServiceTests
             RefreshTokenExpirationInDays = 7
         });
 
-        _sut = new AuthService(
+        _sut = new UserService(
             _employeeRepository.Object,
             _userRepository.Object,
             _refreshTokenRepository.Object,

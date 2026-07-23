@@ -10,4 +10,3 @@ public record QuestionCreateDto
     public required QuestionType QuestionType { get; init; }
     public required int OrderIndex { get; init; }
 }
-

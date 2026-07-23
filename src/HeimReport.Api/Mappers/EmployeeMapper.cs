@@ -14,11 +14,13 @@ public static class EmployeeMapper
             LastName = employee.LastName,
             Email = employee.Email,
             NationalId = employee.NationalId,
+            BirthDate = employee.BirthDate,
             HireDate = employee.HireDate,
             ContractType = employee.ContractType,
             ContractEndDate = employee.ContractEndDate,
             TerminationDate = employee.TerminationDate,
             Status = employee.Status,
+            CurrentSalary = employee.CurrentSalary,
             CountryId = employee.CountryId,
             CountryName = employee.Country?.Name ?? string.Empty,
             DepartmentId = employee.DepartmentId,
@@ -41,15 +43,16 @@ public static class EmployeeMapper
             Email = dto.Email,
             NormalizedEmail = dto.Email.Trim().ToUpperInvariant(),
             NationalId = dto.NationalId,
+            BirthDate = dto.BirthDate,
             HireDate = dto.HireDate,
             ContractType = dto.ContractType,
             ContractEndDate = dto.ContractEndDate,
             Status = EmployeeStatus.Active,
+            CurrentSalary = dto.CurrentSalary,
             CountryId = dto.CountryId,
             DepartmentId = dto.DepartmentId,
             PositionId = dto.PositionId,
-            ManagerId = dto.ManagerId,
-            CreatedAt = DateTime.UtcNow
+            ManagerId = dto.ManagerId
         };
     }
 
@@ -60,10 +63,12 @@ public static class EmployeeMapper
         employee.Email = dto.Email;
         employee.NormalizedEmail = dto.Email.Trim().ToUpperInvariant();
         employee.NationalId = dto.NationalId;
+        employee.BirthDate = dto.BirthDate;
         employee.ContractType = dto.ContractType;
         employee.ContractEndDate = dto.ContractEndDate;
         employee.Status = dto.Status;
         employee.TerminationDate = dto.TerminationDate;
+        employee.CurrentSalary = dto.CurrentSalary;
         employee.CountryId = dto.CountryId;
         employee.DepartmentId = dto.DepartmentId;
         employee.PositionId = dto.PositionId;

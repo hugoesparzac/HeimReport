@@ -1,4 +1,4 @@
-using HeimReport.Api.DTOs.Auth;
+using HeimReport.Api.DTOs.Users;
 using HeimReport.Api.Entities;
 using HeimReport.Api.Enums;
 
@@ -17,8 +17,7 @@ public static class UserMapper
             Role = SystemRole.Employee,
             IsEmailVerified = false,
             IsActive = true,
-            PreferredLanguage = dto.PreferredLanguage,
-            CreatedAt = DateTime.UtcNow
+            PreferredLanguage = dto.PreferredLanguage
         };
     }
 

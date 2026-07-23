@@ -1,6 +1,6 @@
 using HeimReport.Api.Entities;
 
-namespace HeimReport.Api.Repositories.Auth;
+namespace HeimReport.Api.Repositories.Users;
 
 public interface IUserRepository : IRepository<User>
 {

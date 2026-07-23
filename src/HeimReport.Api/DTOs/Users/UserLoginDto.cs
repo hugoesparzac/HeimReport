@@ -1,4 +1,4 @@
-namespace HeimReport.Api.DTOs.Auth;
+namespace HeimReport.Api.DTOs.Users;
 public record UserLoginDto
 {
     public required string UsernameOrEmail { get; init; }

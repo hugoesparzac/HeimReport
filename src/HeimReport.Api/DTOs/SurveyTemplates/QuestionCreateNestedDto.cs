@@ -10,4 +10,3 @@ public record QuestionCreateNestedDto
 
     public List<QuestionOptionCreateNestedDto> Options { get; init; } = [];
 }
-

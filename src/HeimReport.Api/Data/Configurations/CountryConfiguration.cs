@@ -13,6 +13,10 @@ public class CountryConfiguration : IEntityTypeConfiguration<Country>
         builder.Property(p => p.Name)
             .IsRequired()
             .HasMaxLength(60);
+        builder.Property(x => x.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
+
         builder.HasIndex(p => p.Name)
             .IsUnique();
     }
