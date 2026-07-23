@@ -2,7 +2,7 @@ using HeimReport.Api.Data;
 using HeimReport.Api.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace HeimReport.Api.Repositories.Auth;
+namespace HeimReport.Api.Repositories.Users;
 
 public class UserRepository(ApplicationDbContext context)
     : Repository<User>(context), IUserRepository

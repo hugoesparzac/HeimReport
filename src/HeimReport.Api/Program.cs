@@ -5,7 +5,7 @@ using HeimReport.Api.Email;
 using HeimReport.Api.ExceptionHandlers;
 using HeimReport.Api.Extensions;
 using HeimReport.Api.Security;
-using HeimReport.Api.Validators.Auth;
+using HeimReport.Api.Validators.Users;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

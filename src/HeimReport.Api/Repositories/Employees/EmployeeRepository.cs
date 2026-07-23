@@ -9,13 +9,13 @@ public class EmployeeRepository(ApplicationDbContext context) : Repository<Emplo
 {
     public async Task<Employee?> GetByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
     {
-        var email = normalizedEmail.Trim().ToLowerInvariant();
+        var email = normalizedEmail.Trim().ToUpperInvariant();
         return await DbSet.FirstOrDefaultAsync(e => e.NormalizedEmail == email, cancellationToken);
     }
 
     public async Task<Employee?> GetActiveByNormalizedEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var normalizedEmail = email.Trim().ToUpperInvariant();
         return await DbSet.FirstOrDefaultAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == EmployeeStatus.Active, cancellationToken);
     }
 

@@ -1,4 +1,4 @@
-using HeimReport.Api.DTOs.Auth;
+using HeimReport.Api.DTOs.Users;
 using HeimReport.Api.Entities;
 using HeimReport.Api.Enums;
 

@@ -1,6 +1,6 @@
 using HeimReport.Api.Enums;
 
-namespace HeimReport.Api.DTOs.Auth;
+namespace HeimReport.Api.DTOs.Users;
 
 public record UserResponseDto
 {

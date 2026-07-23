@@ -1,5 +1,5 @@
-using HeimReport.Api.DTOs.Auth;
-using HeimReport.Api.Services.Auth;
+using HeimReport.Api.DTOs.Users;
+using HeimReport.Api.Services.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -9,7 +9,7 @@ namespace HeimReport.Api.Controllers;
 [ApiController]
 [Route("api/users")]
 [Authorize]
-public class UsersController(IAuthService authService) : ControllerBase
+public class UsersController(IUserService userService) : ControllerBase
 {
     [HttpGet("{id:int}")]
     public async Task<ActionResult<UserResponseDto>> GetById(int id, CancellationToken cancellationToken)
@@ -26,7 +26,7 @@ public class UsersController(IAuthService authService) : ControllerBase
             return Forbid();
         }
 
-        var result = await authService.GetByIdAsync(id, cancellationToken);
+        var result = await userService.GetByIdAsync(id, cancellationToken);
         return Ok(result);
     }
 }
