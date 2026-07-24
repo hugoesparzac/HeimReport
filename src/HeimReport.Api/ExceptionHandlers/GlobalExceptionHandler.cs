@@ -79,8 +79,10 @@ public partial class GlobalExceptionHandler(IWebHostEnvironment env, ILogger<Glo
 
             case DomainException domainException:
                 LogDomainRuleViolated(httpContext.Request.Path, domainException.Message);
-                problemDetails.Status = StatusCodes.Status400BadRequest;
-                problemDetails.Title = "Business Rule Violation";
+                problemDetails.Status = domainException.StatusCode;
+                problemDetails.Title = domainException.StatusCode == StatusCodes.Status409Conflict
+                    ? "Conflict"
+                    : "Business Rule Violation";
                 problemDetails.Detail = domainException.Message;
                 break;
 
