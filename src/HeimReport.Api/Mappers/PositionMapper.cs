@@ -1,5 +1,6 @@
 using HeimReport.Api.Entities;
 using HeimReport.Api.DTOs.Positions;
+
 namespace HeimReport.Api.Mappers;
 
 public static class PositionMapper
@@ -16,7 +17,7 @@ public static class PositionMapper
         };
     }
 
-    public static Position ToEntity(this PositionCreateUpdateDto dto)
+    public static Position ToEntity(this PositionCreateDto dto)
     {
         return new Position
         {
@@ -25,5 +26,13 @@ public static class PositionMapper
             IsCritical = dto.IsCritical,
             IsActive = dto.IsActive
         };
+    }
+
+    public static void UpdateEntity(this PositionUpdateDto dto, Position position)
+    {
+        position.Title = dto.Title;
+        position.CareerLevel = dto.CareerLevel;
+        position.IsCritical = dto.IsCritical;
+        position.IsActive = dto.IsActive;
     }
 }

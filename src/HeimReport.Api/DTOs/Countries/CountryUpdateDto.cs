@@ -1,7 +1,7 @@
 namespace HeimReport.Api.DTOs.Countries;
 
-public record CountryCreateUpdateDto
+public record CountryUpdateDto
 {
     public required string Name { get; init; }
-    public bool IsActive { get; init; } = true;
+    public bool IsActive { get; init; }
 }

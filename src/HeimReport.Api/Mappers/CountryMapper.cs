@@ -15,12 +15,19 @@ public static class CountryMapper
         };
     }
 
-    public static Country ToEntity(this CountryCreateUpdateDto dto)
+    public static Country ToEntity(this CountryCreateDto dto)
     {
         return new Country
         {
             Name = dto.Name,
             IsActive = dto.IsActive
         };
+    }
+
+    // Muta la entidad ya trackeada por EF; no crea una nueva instancia.
+    public static void UpdateEntity(this CountryUpdateDto dto, Country country)
+    {
+        country.Name = dto.Name;
+        country.IsActive = dto.IsActive;
     }
 }

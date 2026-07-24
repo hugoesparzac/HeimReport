@@ -1,3 +1,5 @@
+using HeimReport.Api.Enums;
+
 namespace HeimReport.Api.Entities;
 
 public class EmployeeJobHistory
@@ -14,7 +16,8 @@ public class EmployeeJobHistory
     public decimal? Salary { get; set; }
     public required DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }
-    public string? ChangeReason { get; set; }
+    public JobChangeReason? ChangeReason { get; set; }
+    public string? OtherReasonDetail { get; set; }
     public required DateTime CreatedAt { get; set; }
     public int? CreatedBy { get; set; }
 }

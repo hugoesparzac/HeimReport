@@ -32,7 +32,6 @@ builder.Services.AddSecurityServices();
 builder.Services.AddCorsPolicy(builder.Configuration);
 
 builder.Services.AddValidatorsFromAssemblyContaining<UserRegistrationDtoValidator>();
-builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddEmailSender(builder.Configuration);
 

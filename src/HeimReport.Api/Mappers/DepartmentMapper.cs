@@ -15,12 +15,18 @@ public static class DepartmentMapper
         };
     }
 
-    public static Department ToEntity(this DepartmentCreateUpdateDto dto)
+    public static Department ToEntity(this DepartmentCreateDto dto)
     {
         return new Department
         {
             Name = dto.Name,
             IsActive = dto.IsActive
         };
+    }
+
+    public static void UpdateEntity(this DepartmentUpdateDto dto, Department department)
+    {
+        department.Name = dto.Name;
+        department.IsActive = dto.IsActive;
     }
 }

@@ -1,22 +1,24 @@
 ﻿using HeimReport.Api.Data;
 using HeimReport.Api.Entities;
+using HeimReport.Api.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Repositories.Positions;
 
-public class PositionRepository(ApplicationDbContext context) : Repository<Position>(context), IPositionRepository
+public class PositionRepository(ApplicationDbContext context)
+    : Repository<Position>(context), IPositionRepository
 {
-    public Task<bool> ExistsByNameAsync(string title, CancellationToken cancellationToken = default)
+    public Task<bool> ExistsByTitleAsync(string title, int? excludeId, CancellationToken cancellationToken = default)
     {
         return Context.Set<Position>()
             .AnyAsync(
-                p => EF.Functions.ILike(p.Title, title),
+                p => EF.Functions.ILike(p.Title, title) && (excludeId == null || p.Id != excludeId),
                 cancellationToken);
     }
 
-    public Task<bool> IsReferencedByEmployeeAsync(int id, CancellationToken cancellationToken = default)
+    public Task<bool> IsReferencedByActiveEmployeeAsync(int id, CancellationToken cancellationToken = default)
     {
         return Context.Set<Employee>()
-            .AnyAsync(e => e.PositionId == id, cancellationToken);
+            .AnyAsync(e => e.PositionId == id && e.Status == EmployeeStatus.Active, cancellationToken);
     }
 }
