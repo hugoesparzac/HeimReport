@@ -1,5 +1,6 @@
 using HeimReport.Api.Services.Countries;
 using HeimReport.Api.Services.Departments;
+using HeimReport.Api.Services.Employees;
 using HeimReport.Api.Services.Positions;
 using HeimReport.Api.Services.Users;
 
@@ -11,6 +12,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ICountryService, CountryService>();
         services.AddScoped<IDepartmentService, DepartmentService>();
+        services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<IUserService, UserService>();
 
