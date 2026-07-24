@@ -8,14 +8,22 @@ public class DepartmentUpdateDtoValidator : AbstractValidator<DepartmentUpdateDt
 {
     public DepartmentUpdateDtoValidator(IDepartmentRepository repository)
     {
-        RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage("Invalid Department Id");
-
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required")
-            .MaximumLength(60).WithMessage("Name cannot exceed 60 characters")
-            .MustAsync(async (dto, name, ct) =>
-                !await repository.ExistsByNameAsync(name, excludeId: dto.Id, ct))
+            .MaximumLength(100).WithMessage("Name cannot exceed 100 characters")
+            .MustAsync(async (_, name, context, ct) =>
+                !await repository.ExistsByNameAsync(name, GetCurrentId(context), ct))
             .WithMessage("A department with this name already exists");
+    }
+
+    private static int GetCurrentId(ValidationContext<DepartmentUpdateDto> context)
+    {
+        if (context.RootContextData.TryGetValue("DepartmentId", out var value) && value is int id)
+        {
+            return id;
+        }
+
+        throw new InvalidOperationException(
+            "DepartmentId must be set in RootContextData before validating DepartmentUpdateDto.");
     }
 }

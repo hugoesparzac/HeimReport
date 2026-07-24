@@ -10,7 +10,7 @@ public class PositionCreateDtoValidator : AbstractValidator<PositionCreateDto>
     {
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Title is required")
-            .MaximumLength(60).WithMessage("Title cannot exceed 60 characters")
+            .MaximumLength(100).WithMessage("Title cannot exceed 100 characters")
             .MustAsync(async (title, ct) =>
                 !await repository.ExistsByTitleAsync(title, excludeId: null, ct))
             .WithMessage("A position with this title already exists");

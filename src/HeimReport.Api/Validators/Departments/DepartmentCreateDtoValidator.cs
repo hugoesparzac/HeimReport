@@ -10,7 +10,7 @@ public class DepartmentCreateDtoValidator : AbstractValidator<DepartmentCreateDt
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required")
-            .MaximumLength(60).WithMessage("Name cannot exceed 60 characters")
+            .MaximumLength(100).WithMessage("Name cannot exceed 100 characters")
             .MustAsync(async (name, ct) =>
                 !await repository.ExistsByNameAsync(name, excludeId: null, ct))
             .WithMessage("A department with this name already exists");

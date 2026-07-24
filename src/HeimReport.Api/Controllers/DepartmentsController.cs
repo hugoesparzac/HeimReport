@@ -1,4 +1,7 @@
+using FluentValidation;
+using HeimReport.Api.DTOs.Common;
 using HeimReport.Api.DTOs.Departments;
+using HeimReport.Api.Extensions;
 using HeimReport.Api.Services.Departments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,13 +11,26 @@ namespace HeimReport.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class DepartmentsController(IDepartmentService departmentService) : ControllerBase
+public class DepartmentsController(
+    IDepartmentService departmentService,
+    IValidator<DepartmentCreateDto> createValidator,
+    IValidator<DepartmentUpdateDto> updateValidator) : ControllerBase
 {
     [HttpGet]
     [Authorize(Roles = "Admin,HR")]
-    public async Task<ActionResult<IEnumerable<DepartmentResponseDto>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResultDto<DepartmentResponseDto>>> GetActivePaged(
+        [FromQuery] PaginationQueryDto query, CancellationToken cancellationToken)
     {
-        var result = await departmentService.GetAllAsync(cancellationToken);
+        var result = await departmentService.GetActivePagedAsync(query, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("inactive")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<PagedResultDto<DepartmentResponseDto>>> GetInactivePaged(
+        [FromQuery] PaginationQueryDto query, CancellationToken cancellationToken)
+    {
+        var result = await departmentService.GetInactivePagedAsync(query, cancellationToken);
         return Ok(result);
     }
 
@@ -29,9 +45,11 @@ public class DepartmentsController(IDepartmentService departmentService) : Contr
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<DepartmentResponseDto>> Create(
-        [FromBody] DepartmentCreateUpdateDto dto,
+        [FromBody] DepartmentCreateDto dto,
         CancellationToken cancellationToken)
     {
+        await createValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
         var result = await departmentService.CreateAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
@@ -40,9 +58,14 @@ public class DepartmentsController(IDepartmentService departmentService) : Contr
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] DepartmentCreateUpdateDto dto,
+        [FromBody] DepartmentUpdateDto dto,
         CancellationToken cancellationToken)
     {
+        var context = new ValidationContext<DepartmentUpdateDto>(dto);
+        context.RootContextData["DepartmentId"] = id;
+
+        await updateValidator.ValidateOrThrowAsync(context, cancellationToken);
+
         await departmentService.UpdateAsync(id, dto, cancellationToken);
         return NoContent();
     }
@@ -53,5 +76,31 @@ public class DepartmentsController(IDepartmentService departmentService) : Contr
     {
         await departmentService.DeleteAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    [HttpPost("{id:int}/reactivate")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Reactivate(int id, CancellationToken cancellationToken)
+    {
+        await departmentService.ReactivateAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("bulk-delete")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<BulkOperationResultDto>> DeleteMany(
+        [FromBody] BulkIdsDto dto, CancellationToken cancellationToken)
+    {
+        var result = await departmentService.DeleteManyAsync(dto, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("bulk-reactivate")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<BulkOperationResultDto>> ReactivateMany(
+        [FromBody] BulkIdsDto dto, CancellationToken cancellationToken)
+    {
+        var result = await departmentService.ReactivateManyAsync(dto, cancellationToken);
+        return Ok(result);
     }
 }
