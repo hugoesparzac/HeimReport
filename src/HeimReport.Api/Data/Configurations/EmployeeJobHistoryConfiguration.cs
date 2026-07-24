@@ -19,6 +19,9 @@ public class EmployeeJobHistoryConfiguration : IEntityTypeConfiguration<Employee
             .IsRequired();
         builder.Property(x => x.StartDate)
             .IsRequired();
+        builder.Property(x => x.ChangeReason);
+        builder.Property(x => x.OtherReasonDetail)
+            .HasMaxLength(255);
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
