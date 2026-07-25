@@ -1,4 +1,5 @@
 using HeimReport.Api.Repositories;
+using HeimReport.Api.Repositories.AuditLogs;
 using HeimReport.Api.Repositories.Countries;
 using HeimReport.Api.Repositories.Departments;
 using HeimReport.Api.Repositories.Employees;
@@ -19,6 +20,7 @@ public static class RepositoryServiceExtensions
         services.AddScoped<IPositionRepository, PositionRepository>();
         services.AddScoped<ICountryRepository, CountryRepository>();
         services.AddScoped<IEmployeeJobHistoryRepository, EmployeeJobHistoryRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         return services;
     }

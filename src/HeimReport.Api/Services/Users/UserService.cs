@@ -7,6 +7,7 @@ using HeimReport.Api.Mappers;
 using HeimReport.Api.Repositories.Employees;
 using HeimReport.Api.Repositories.Users;
 using HeimReport.Api.Security;
+using HeimReport.Api.Services.AuditLogs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -20,11 +21,14 @@ public sealed partial class UserService(
     ITokenHasher tokenHasher,
     IJwtProvider jwtProvider,
     IEmailSender emailSender,
+    IAuditLogService auditLogService,
     IOptions<JwtOptions> jwtOptions,
     ILogger<UserService> logger) : IUserService
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private static readonly TimeSpan VerificationTokenLifetime = TimeSpan.FromHours(24);
+
+    // ===================== REGISTRATION =====================
 
     public async Task<UserResponseDto> RegisterAsync(UserRegistrationDto dto, CancellationToken cancellationToken = default)
     {
@@ -65,13 +69,19 @@ public sealed partial class UserService(
 
         LogUserRegistered(employee.Id);
 
-        // TODO: AuditLogs (Action = "REGISTER_USER") — pendiente, pieza transversal diferida.
+        await auditLogService.LogAsync(
+            "REGISTER_USER", nameof(User), user.Id,
+            oldValues: null,
+            newValues: new { user.EmployeeId, user.Username, user.Role },
+            cancellationToken: cancellationToken);
 
         var created = await userRepository.GetByIdWithDetailsAsync(user.Id, cancellationToken)
             ?? throw NotFoundException.ForEntity<User>(user.Id);
 
         return created.ToResponseDto();
     }
+
+    // ===================== PROVISIONING =====================
 
     public async Task<UserResponseDto> ProvisionAsync(UserProvisionDto dto, CancellationToken cancellationToken = default)
     {
@@ -95,7 +105,11 @@ public sealed partial class UserService(
 
         LogUserProvisioned(employee.Id, dto.Role);
 
-        // TODO: AuditLogs (Action = "PROVISION_USER") — pendiente.
+        await auditLogService.LogAsync(
+            "PROVISION_USER", nameof(User), user.Id,
+            oldValues: null,
+            newValues: new { user.EmployeeId, user.Username, user.Role, user.PreferredLanguage },
+            cancellationToken: cancellationToken);
 
         var created = await userRepository.GetByIdWithDetailsAsync(user.Id, cancellationToken)
             ?? throw NotFoundException.ForEntity<User>(user.Id);
@@ -162,6 +176,7 @@ public sealed partial class UserService(
         var user = await userRepository.GetByIdAsync(id, cancellationToken)
             ?? throw NotFoundException.ForEntity<User>(id);
 
+        var oldValues = new { user.Role, user.IsActive, user.PreferredLanguage };
         var isDeactivating = user.IsActive && !dto.IsActive;
 
         dto.UpdateEntity(user);
@@ -175,7 +190,11 @@ public sealed partial class UserService(
 
         await userRepository.SaveChangesAsync(cancellationToken);
 
-        // TODO: AuditLogs (Action = "UPDATE_USER") — pendiente.
+        await auditLogService.LogAsync(
+            "UPDATE_USER", nameof(User), id,
+            oldValues,
+            new { dto.Role, dto.IsActive, dto.PreferredLanguage },
+            cancellationToken);
     }
 
     // ===================== CHANGE PASSWORD =====================
@@ -197,7 +216,10 @@ public sealed partial class UserService(
 
         LogPasswordChanged(userId);
 
-        // TODO: AuditLogs (Action = "CHANGE_PASSWORD") — pendiente.
+        await auditLogService.LogAsync(
+            "CHANGE_PASSWORD", nameof(User), userId,
+            oldValues: null, newValues: null,
+            cancellationToken: cancellationToken);
     }
 
     // ===================== EMAIL VERIFICATION =====================
@@ -222,6 +244,10 @@ public sealed partial class UserService(
         await userRepository.SaveChangesAsync(cancellationToken);
 
         LogEmailVerified(user.Id);
+
+        await auditLogService.LogAsync(
+            "VERIFY_EMAIL", nameof(User), user.Id,
+            cancellationToken: cancellationToken);
     }
 
     public async Task ResendVerificationAsync(ResendEmailVerificationDto dto, CancellationToken cancellationToken = default)
@@ -251,6 +277,10 @@ public sealed partial class UserService(
         await emailSender.SendEmailVerificationAsync(employee.Email, rawToken, user.PreferredLanguage, cancellationToken);
 
         LogVerificationEmailResent(employee.Id);
+
+        await auditLogService.LogAsync(
+            "RESEND_VERIFICATION", nameof(User), user.Id,
+            cancellationToken: cancellationToken);
     }
 
     // ===================== LOGIN / REFRESH / LOGOUT =====================
@@ -285,6 +315,8 @@ public sealed partial class UserService(
 
         LogUserLoggedIn(user.Id);
 
+        await auditLogService.LogAsync("LOGIN", nameof(User), user.Id, cancellationToken: cancellationToken);
+
         return response;
     }
 
@@ -306,6 +338,10 @@ public sealed partial class UserService(
             }
             await refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
+            await auditLogService.LogAsync(
+                "REFRESH_TOKEN_REUSE_DETECTED", nameof(User), storedToken.UserId,
+                cancellationToken: cancellationToken);
+
             throw new DomainException("This session is no longer valid. Please log in again.");
         }
 
@@ -321,7 +357,7 @@ public sealed partial class UserService(
                 "Ensure the query includes .Include(rt => rt.User).ThenInclude(u => u.Employee).");
         }
 
-        var response = await IssueTokenResponseAsync(storedToken.User, cancellationToken, replacingTokenHash: storedToken.TokenHash);
+        var response = await IssueTokenResponseAsync(storedToken.User, cancellationToken);
 
         storedToken.ReplacedByTokenHash = tokenHasher.Hash(response.RefreshToken);
         refreshTokenRepository.Revoke(storedToken);
@@ -347,22 +383,14 @@ public sealed partial class UserService(
         await refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
         LogUserLoggedOut(storedToken.UserId);
+
+        await auditLogService.LogAsync("LOGOUT", nameof(User), storedToken.UserId, cancellationToken: cancellationToken);
     }
 
-    // ===================== HELPERS PRIVADOS =====================
+    // ===================== PRIVATE HELPERS =====================
 
-    private async Task<TokenResponseDto> IssueTokenResponseAsync(
-        User user, CancellationToken cancellationToken, string? replacingTokenHash = null)
+    private async Task<TokenResponseDto> IssueTokenResponseAsync(User user, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(replacingTokenHash))
-        {
-            var tokenToRevoke = await refreshTokenRepository.GetByTokenHashAsync(replacingTokenHash, cancellationToken);
-            if (tokenToRevoke is not null)
-            {
-                refreshTokenRepository.Revoke(tokenToRevoke);
-            }
-        }
-
         var accessToken = jwtProvider.GenerateToken(user);
 
         var rawRefreshToken = tokenHasher.GenerateRawToken();

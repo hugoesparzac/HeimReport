@@ -4,11 +4,14 @@ using HeimReport.Api.Entities;
 using HeimReport.Api.Exceptions;
 using HeimReport.Api.Mappers;
 using HeimReport.Api.Repositories.Countries;
+using HeimReport.Api.Services.AuditLogs;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Services.Countries;
 
-public class CountryService(ICountryRepository countryRepository) : ICountryService
+public class CountryService(
+    ICountryRepository countryRepository,
+    IAuditLogService auditLogService) : ICountryService
 {
     public Task<PagedResultDto<CountryResponseDto>> GetActivePagedAsync(
         PaginationQueryDto query, CancellationToken cancellationToken = default)
@@ -60,6 +63,12 @@ public class CountryService(ICountryRepository countryRepository) : ICountryServ
         await countryRepository.AddAsync(country, cancellationToken);
         await countryRepository.SaveChangesAsync(cancellationToken);
 
+        await auditLogService.LogAsync(
+            "CREATE_COUNTRY", nameof(Country), country.Id,
+            oldValues: null,
+            newValues: new { country.Name, country.IsActive },
+            cancellationToken: cancellationToken);
+
         return country.ToResponseDto();
     }
 
@@ -74,10 +83,18 @@ public class CountryService(ICountryRepository countryRepository) : ICountryServ
             throw DomainException.EntityInUse("Country", "it is currently assigned to one or more active employees");
         }
 
+        var oldValues = new { country.Name, country.IsActive };
+
         dto.UpdateEntity(country);
 
         countryRepository.Update(country);
         await countryRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync(
+            "UPDATE_COUNTRY", nameof(Country), id,
+            oldValues,
+            new { dto.Name, dto.IsActive },
+            cancellationToken);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -99,6 +116,8 @@ public class CountryService(ICountryRepository countryRepository) : ICountryServ
 
         countryRepository.Update(country);
         await countryRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync("DELETE_COUNTRY", nameof(Country), id, cancellationToken: cancellationToken);
     }
 
     public async Task ReactivateAsync(int id, CancellationToken cancellationToken = default)
@@ -115,6 +134,8 @@ public class CountryService(ICountryRepository countryRepository) : ICountryServ
 
         countryRepository.Update(country);
         await countryRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync("REACTIVATE_COUNTRY", nameof(Country), id, cancellationToken: cancellationToken);
     }
 
     public async Task<BulkOperationResultDto> DeleteManyAsync(

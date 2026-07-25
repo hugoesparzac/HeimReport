@@ -5,13 +5,15 @@ using HeimReport.Api.Enums;
 using HeimReport.Api.Exceptions;
 using HeimReport.Api.Mappers;
 using HeimReport.Api.Repositories.Employees;
+using HeimReport.Api.Services.AuditLogs;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Services.Employees;
 
 public class EmployeeService(
     IEmployeeRepository employeeRepository,
-    IEmployeeJobHistoryRepository jobHistoryRepository) : IEmployeeService
+    IEmployeeJobHistoryRepository jobHistoryRepository,
+    IAuditLogService auditLogService) : IEmployeeService
 {
     public async Task<PagedResultDto<EmployeeResponseDto>> GetPagedAsync(
         EmployeeQueryDto query, CancellationToken cancellationToken = default)
@@ -95,7 +97,21 @@ public class EmployeeService(
 
         await jobHistoryRepository.SaveChangesAsync(cancellationToken);
 
-        // TODO: AuditLogs (Action = "CREATE_EMPLOYEE") — pending, deferred cross-section.
+        await auditLogService.LogAsync(
+            "CREATE_EMPLOYEE", nameof(Employee), employee.Id,
+            oldValues: null,
+            newValues: new
+            {
+                employee.FirstName,
+                employee.LastName,
+                employee.Email,
+                employee.DepartmentId,
+                employee.PositionId,
+                employee.CountryId,
+                employee.CurrentSalary,
+                employee.ManagerId
+            },
+            cancellationToken: cancellationToken);
 
         var created = await employeeRepository.GetByIdWithDetailsAsync(employee.Id, cancellationToken)
             ?? throw NotFoundException.ForEntity<Employee>(employee.Id);
@@ -107,6 +123,15 @@ public class EmployeeService(
     {
         var employee = await employeeRepository.GetByIdAsync(id, cancellationToken)
             ?? throw NotFoundException.ForEntity<Employee>(id);
+
+        var oldValues = new
+        {
+            employee.DepartmentId,
+            employee.PositionId,
+            employee.ManagerId,
+            employee.CurrentSalary,
+            employee.Status
+        };
 
         var wasOnLeave = IsOnLeave(employee.Status);
         var isNowOnLeave = employee.Status == EmployeeStatus.Active && IsOnLeave(dto.Status);
@@ -138,7 +163,21 @@ public class EmployeeService(
 
         await employeeRepository.SaveChangesAsync(cancellationToken);
 
-        // TODO: AuditLogs (Action = "UPDATE_EMPLOYEE", OldValues/NewValues) — pending.
+        var action = isNowOnLeave ? "TERMINATE_EMPLOYEE" : isReactivation ? "REACTIVATE_EMPLOYEE" : "UPDATE_EMPLOYEE";
+
+        await auditLogService.LogAsync(
+            action, nameof(Employee), id,
+            oldValues,
+            new
+            {
+                dto.DepartmentId,
+                dto.PositionId,
+                dto.ManagerId,
+                dto.CurrentSalary,
+                dto.Status,
+                dto.TerminationDate
+            },
+            cancellationToken);
     }
 
     public async Task<BulkOperationResultDto> TerminateManyAsync(
@@ -163,18 +202,24 @@ public class EmployeeService(
                 continue;
             }
 
+            var oldStatus = employee.Status;
+
             await CloseJobHistoryForTerminationAsync(id, dto.TerminationDate, cancellationToken);
 
             employee.Status = dto.Status;
             employee.TerminationDate = dto.TerminationDate ?? DateTime.UtcNow;
             employeeRepository.Update(employee);
 
+            await auditLogService.LogAsync(
+                "TERMINATE_EMPLOYEE", nameof(Employee), id,
+                oldValues: new { Status = oldStatus },
+                newValues: new { dto.Status, employee.TerminationDate },
+                cancellationToken: cancellationToken);
+
             succeeded.Add(id);
         }
 
         await employeeRepository.SaveChangesAsync(cancellationToken);
-
-        // TODO: Audit logs for each employee who has been terminated — pending.
 
         return new BulkOperationResultDto { SucceededIds = succeeded, Failed = failed };
     }

@@ -4,11 +4,14 @@ using HeimReport.Api.Entities;
 using HeimReport.Api.Exceptions;
 using HeimReport.Api.Mappers;
 using HeimReport.Api.Repositories.Positions;
+using HeimReport.Api.Services.AuditLogs;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Services.Positions;
 
-public class PositionService(IPositionRepository positionRepository) : IPositionService
+public class PositionService(
+    IPositionRepository positionRepository,
+    IAuditLogService auditLogService) : IPositionService
 {
     public Task<PagedResultDto<PositionResponseDto>> GetActivePagedAsync(
         PaginationQueryDto query, CancellationToken cancellationToken = default)
@@ -60,6 +63,12 @@ public class PositionService(IPositionRepository positionRepository) : IPosition
         await positionRepository.AddAsync(position, cancellationToken);
         await positionRepository.SaveChangesAsync(cancellationToken);
 
+        await auditLogService.LogAsync(
+            "CREATE_POSITION", nameof(Position), position.Id,
+            oldValues: null,
+            newValues: new { position.Title, position.CareerLevel, position.IsCritical, position.IsActive },
+            cancellationToken: cancellationToken);
+
         return position.ToResponseDto();
     }
 
@@ -74,10 +83,18 @@ public class PositionService(IPositionRepository positionRepository) : IPosition
             throw DomainException.EntityInUse("Position", "it is currently assigned to one or more active employees");
         }
 
+        var oldValues = new { position.Title, position.CareerLevel, position.IsCritical, position.IsActive };
+
         dto.UpdateEntity(position);
 
         positionRepository.Update(position);
         await positionRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync(
+            "UPDATE_POSITION", nameof(Position), id,
+            oldValues,
+            new { dto.Title, dto.CareerLevel, dto.IsCritical, dto.IsActive },
+            cancellationToken);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -99,6 +116,8 @@ public class PositionService(IPositionRepository positionRepository) : IPosition
 
         positionRepository.Update(position);
         await positionRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync("DELETE_POSITION", nameof(Position), id, cancellationToken: cancellationToken);
     }
 
     public async Task ReactivateAsync(int id, CancellationToken cancellationToken = default)
@@ -115,6 +134,8 @@ public class PositionService(IPositionRepository positionRepository) : IPosition
 
         positionRepository.Update(position);
         await positionRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync("REACTIVATE_POSITION", nameof(Position), id, cancellationToken: cancellationToken);
     }
 
     public async Task<BulkOperationResultDto> DeleteManyAsync(
