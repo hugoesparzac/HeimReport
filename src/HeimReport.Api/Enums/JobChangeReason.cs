@@ -7,5 +7,6 @@ public enum JobChangeReason
     SalaryAdjustment = 3,
     Reorganization = 4,
     Termination = 5,
-    Other = 6
+    Reactivation = 6,
+    Other = 7
 }

@@ -6,26 +6,20 @@ namespace HeimReport.Api.Mappers;
 
 public static class UserMapper
 {
-    public static User ToEntity(this UserRegistrationDto dto, int employeeId)
-    {
-        return new User
-        {
-            EmployeeId = employeeId,
-            Username = dto.Username,
-            NormalizedUsername = dto.Username.Trim().ToUpperInvariant(),
-            PasswordHash = string.Empty,
-            Role = SystemRole.Employee,
-            IsEmailVerified = false,
-            IsActive = true,
-            PreferredLanguage = dto.PreferredLanguage
-        };
-    }
-
     public static UserResponseDto ToResponseDto(this User user)
     {
+        if (user.Employee is null)
+        {
+            throw new InvalidOperationException(
+                $"User with Id {user.Id} was loaded without its related Employee. " +
+                "Ensure the query includes .Include(u => u.Employee).");
+        }
+
         return new UserResponseDto
         {
             Id = user.Id,
+            EmployeeId = user.EmployeeId,
+            EmployeeFullName = $"{user.Employee.FirstName} {user.Employee.LastName}",
             Username = user.Username,
             Role = user.Role,
             IsEmailVerified = user.IsEmailVerified,
@@ -36,21 +30,40 @@ public static class UserMapper
         };
     }
 
-    public static void RecordLogin(this User user)
+    public static User ToEntity(this UserRegistrationDto dto, int employeeId, string passwordHash)
     {
-        user.LastLoginAt = DateTime.UtcNow;
+        return new User
+        {
+            EmployeeId = employeeId,
+            Username = dto.Username,
+            NormalizedUsername = dto.Username.ToUpperInvariant(),
+            PasswordHash = passwordHash,
+            Role = SystemRole.Employee,
+            IsEmailVerified = false,
+            IsActive = true,
+            PreferredLanguage = dto.PreferredLanguage
+        };
     }
 
-    public static void ConfirmEmailVerification(this User user)
+    public static User ToEntity(this UserProvisionDto dto, string passwordHash)
     {
-        user.IsEmailVerified = true;
-        user.EmailVerificationTokenHash = null;
-        user.EmailVerificationTokenExpiresAt = null;
+        return new User
+        {
+            EmployeeId = dto.EmployeeId,
+            Username = dto.Username,
+            NormalizedUsername = dto.Username.ToUpperInvariant(),
+            PasswordHash = passwordHash,
+            Role = dto.Role,
+            IsEmailVerified = false,
+            IsActive = true,
+            PreferredLanguage = dto.PreferredLanguage
+        };
     }
 
-    public static void SetEmailVerificationToken(this User user, string tokenHash, DateTime expiresAt)
+    public static void UpdateEntity(this UserUpdateDto dto, User user)
     {
-        user.EmailVerificationTokenHash = tokenHash;
-        user.EmailVerificationTokenExpiresAt = expiresAt;
+        user.Role = dto.Role;
+        user.IsActive = dto.IsActive;
+        user.PreferredLanguage = dto.PreferredLanguage;
     }
 }

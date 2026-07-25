@@ -1,5 +1,7 @@
+using FluentValidation;
+using HeimReport.Api.DTOs.Common;
 using HeimReport.Api.DTOs.Employees;
-using HeimReport.Api.Enums;
+using HeimReport.Api.Extensions;
 using HeimReport.Api.Services.Employees;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,22 +11,19 @@ namespace HeimReport.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class EmployeesController(IEmployeeService employeeService) : ControllerBase
+public class EmployeesController(
+    IEmployeeService employeeService,
+    IValidator<EmployeeCreateDto> createValidator,
+    IValidator<EmployeeUpdateDto> updateValidator,
+    IValidator<EmployeeBulkTerminationDto> terminationValidator) : ControllerBase
 {
     [HttpGet]
     [Authorize(Roles = "Admin,HR")]
-    public async Task<ActionResult> GetAll(
-        [FromQuery] EmployeeStatus? status,
-        [FromQuery] int? departmentId,
-        [FromQuery] int? positionId,
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10,
-        CancellationToken cancellationToken = default)
+    public async Task<ActionResult<PagedResultDto<EmployeeResponseDto>>> GetPaged(
+        [FromQuery] EmployeeQueryDto query, CancellationToken cancellationToken)
     {
-        var (items, totalCount) = await employeeService.GetAllAsync(
-            status, departmentId, positionId, pageNumber, pageSize, cancellationToken);
-
-        return Ok(new { items, totalCount });
+        var result = await employeeService.GetPagedAsync(query, cancellationToken);
+        return Ok(result);
     }
 
     [HttpGet("{id:int}")]
@@ -41,6 +40,8 @@ public class EmployeesController(IEmployeeService employeeService) : ControllerB
         [FromBody] EmployeeCreateDto dto,
         CancellationToken cancellationToken)
     {
+        await createValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
         var result = await employeeService.CreateAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
@@ -52,15 +53,34 @@ public class EmployeesController(IEmployeeService employeeService) : ControllerB
         [FromBody] EmployeeUpdateDto dto,
         CancellationToken cancellationToken)
     {
+        var current = await employeeService.GetByIdAsync(id, cancellationToken);
+
+        var snapshot = new EmployeeSnapshot(
+            current.DepartmentId,
+            current.PositionId,
+            current.ManagerId,
+            current.CurrentSalary,
+            current.Status);
+
+        var context = new ValidationContext<EmployeeUpdateDto>(dto);
+        context.RootContextData["EmployeeId"] = id;
+        context.RootContextData["CurrentSnapshot"] = snapshot;
+
+        await updateValidator.ValidateOrThrowAsync(context, cancellationToken);
+
         await employeeService.UpdateAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    [HttpPost("bulk-terminate")]
+    [Authorize(Roles = "Admin,HR")]
+    public async Task<ActionResult<BulkOperationResultDto>> TerminateMany(
+        [FromBody] EmployeeBulkTerminationDto dto,
+        CancellationToken cancellationToken)
     {
-        await employeeService.DeleteAsync(id, cancellationToken);
-        return NoContent();
+        await terminationValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
+        var result = await employeeService.TerminateManyAsync(dto, cancellationToken);
+        return Ok(result);
     }
 }

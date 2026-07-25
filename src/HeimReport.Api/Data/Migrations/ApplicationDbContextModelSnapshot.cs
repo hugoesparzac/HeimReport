@@ -405,8 +405,8 @@ namespace HeimReport.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ChangeReason")
-                        .HasColumnType("text");
+                    b.Property<int?>("ChangeReason")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -425,6 +425,10 @@ namespace HeimReport.Api.Data.Migrations
 
                     b.Property<int?>("ManagerId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("OtherReasonDetail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<int>("PositionId")
                         .HasColumnType("integer");

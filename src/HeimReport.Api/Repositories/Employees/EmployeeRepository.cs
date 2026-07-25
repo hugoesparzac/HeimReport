@@ -1,65 +1,86 @@
 ﻿using HeimReport.Api.Data;
 using HeimReport.Api.Entities;
-using HeimReport.Api.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Repositories.Employees;
 
-public class EmployeeRepository(ApplicationDbContext context) : Repository<Employee>(context), IEmployeeRepository
+public class EmployeeRepository(ApplicationDbContext context)
+    : Repository<Employee>(context), IEmployeeRepository
 {
-    public async Task<Employee?> GetByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
-    {
-        var email = normalizedEmail.Trim().ToUpperInvariant();
-        return await DbSet.FirstOrDefaultAsync(e => e.NormalizedEmail == email, cancellationToken);
-    }
-
-    public async Task<Employee?> GetActiveByNormalizedEmailAsync(string email, CancellationToken cancellationToken = default)
-    {
-        var normalizedEmail = email.Trim().ToUpperInvariant();
-        return await DbSet.FirstOrDefaultAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == EmployeeStatus.Active, cancellationToken);
-    }
-
     public Task<Employee?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        return DbSet
-            .Include(e => e.Country)
-            .Include(e => e.Department)
-            .Include(e => e.Position)
-            .Include(e => e.Manager)
+        return QueryWithDetails()
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
-    public async Task<(IEnumerable<Employee> Items, int TotalCount)> GetAllWithFiltersAsync(
-        EmployeeStatus? status,
-        int? departmentId,
-        int? positionId,
-        int pageNumber,
-        int pageSize,
-        CancellationToken cancellationToken = default)
+    public IQueryable<Employee> QueryWithDetails()
     {
-        var query = DbSet.AsQueryable();
-
-        if (status.HasValue)
-            query = query.Where(e => e.Status == status.Value);
-
-        if (departmentId.HasValue)
-            query = query.Where(e => e.DepartmentId == departmentId.Value);
-
-        if (positionId.HasValue)
-            query = query.Where(e => e.PositionId == positionId.Value);
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return (items, totalCount);
+        return Context.Set<Employee>()
+            .Include(e => e.Country)
+            .Include(e => e.Department)
+            .Include(e => e.Position)
+            .Include(e => e.Manager);
     }
 
-    public Task<bool> ExistsByNationalIdAndCountryAsync(string nationalId, int countryId, CancellationToken cancellationToken = default)
+    public Task<Employee?> GetActiveByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
     {
-        return DbSet.AnyAsync(e => e.NationalId == nationalId && e.CountryId == countryId, cancellationToken);
+        return Context.Set<Employee>()
+            .FirstOrDefaultAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == Enums.EmployeeStatus.Active, cancellationToken);
+    }
+
+    public Task<bool> ExistsActiveAsync(int employeeId, CancellationToken cancellationToken = default)
+    {
+        return Context.Set<Employee>()
+            .AnyAsync(e => e.Id == employeeId && e.Status == Enums.EmployeeStatus.Active, cancellationToken);
+    }
+
+    public Task<bool> ExistsActiveByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+    {
+        return Context.Set<Employee>()
+            .AnyAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == Enums.EmployeeStatus.Active, cancellationToken);
+    }
+
+    public Task<bool> ExistsByNormalizedEmailAsync(
+        string normalizedEmail, int? excludeId, CancellationToken cancellationToken = default)
+    {
+        return Context.Set<Employee>()
+            .AnyAsync(
+                e => e.NormalizedEmail == normalizedEmail && (excludeId == null || e.Id != excludeId),
+                cancellationToken);
+    }
+
+    public Task<bool> ExistsByNationalIdAndCountryAsync(
+        string nationalId, int countryId, int? excludeId, CancellationToken cancellationToken = default)
+    {
+        return Context.Set<Employee>()
+            .AnyAsync(
+                e => e.NationalId == nationalId
+                    && e.CountryId == countryId
+                    && (excludeId == null || e.Id != excludeId),
+                cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<int>> GetManagerChainAsync(
+        int startEmployeeId, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            WITH RECURSIVE manager_chain AS (
+                SELECT "Id", "ManagerId", 1 AS depth
+                FROM "Employees"
+                WHERE "Id" = {0}
+
+                UNION ALL
+
+                SELECT e."Id", e."ManagerId", mc.depth + 1
+                FROM "Employees" e
+                INNER JOIN manager_chain mc ON e."Id" = mc."ManagerId"
+                WHERE mc.depth < 20 -- margen amplio sobre los 6 CareerLevel reales; corta rápido si hay datos corruptos
+            )
+            SELECT "Id" FROM manager_chain
+            """;
+
+        return await Context.Database
+            .SqlQueryRaw<int>(sql, startEmployeeId)
+            .ToListAsync(cancellationToken);
     }
 }

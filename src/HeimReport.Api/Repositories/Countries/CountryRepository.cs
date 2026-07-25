@@ -21,4 +21,10 @@ public class CountryRepository(ApplicationDbContext context)
         return Context.Set<Employee>()
             .AnyAsync(e => e.CountryId == id && e.Status == EmployeeStatus.Active, cancellationToken);
     }
+
+    public Task<bool> ExistsActiveAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return Context.Set<Country>()
+            .AnyAsync(c => c.Id == id && c.IsActive, cancellationToken);
+    }
 }

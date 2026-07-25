@@ -4,11 +4,14 @@ using HeimReport.Api.Entities;
 using HeimReport.Api.Exceptions;
 using HeimReport.Api.Mappers;
 using HeimReport.Api.Repositories.Departments;
+using HeimReport.Api.Services.AuditLogs;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Services.Departments;
 
-public class DepartmentService(IDepartmentRepository departmentRepository) : IDepartmentService
+public class DepartmentService(
+    IDepartmentRepository departmentRepository,
+    IAuditLogService auditLogService) : IDepartmentService
 {
     public Task<PagedResultDto<DepartmentResponseDto>> GetActivePagedAsync(
         PaginationQueryDto query, CancellationToken cancellationToken = default)
@@ -60,6 +63,12 @@ public class DepartmentService(IDepartmentRepository departmentRepository) : IDe
         await departmentRepository.AddAsync(department, cancellationToken);
         await departmentRepository.SaveChangesAsync(cancellationToken);
 
+        await auditLogService.LogAsync(
+            "CREATE_DEPARTMENT", nameof(Department), department.Id,
+            oldValues: null,
+            newValues: new { department.Name, department.IsActive },
+            cancellationToken: cancellationToken);
+
         return department.ToResponseDto();
     }
 
@@ -74,10 +83,18 @@ public class DepartmentService(IDepartmentRepository departmentRepository) : IDe
             throw DomainException.EntityInUse("Department", "it is currently assigned to one or more active employees");
         }
 
+        var oldValues = new { department.Name, department.IsActive };
+
         dto.UpdateEntity(department);
 
         departmentRepository.Update(department);
         await departmentRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync(
+            "UPDATE_DEPARTMENT", nameof(Department), id,
+            oldValues,
+            new { dto.Name, dto.IsActive },
+            cancellationToken);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -99,6 +116,8 @@ public class DepartmentService(IDepartmentRepository departmentRepository) : IDe
 
         departmentRepository.Update(department);
         await departmentRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync("DELETE_DEPARTMENT", nameof(Department), id, cancellationToken: cancellationToken);
     }
 
     public async Task ReactivateAsync(int id, CancellationToken cancellationToken = default)
@@ -115,6 +134,8 @@ public class DepartmentService(IDepartmentRepository departmentRepository) : IDe
 
         departmentRepository.Update(department);
         await departmentRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync("REACTIVATE_DEPARTMENT", nameof(Department), id, cancellationToken: cancellationToken);
     }
 
     public async Task<BulkOperationResultDto> DeleteManyAsync(

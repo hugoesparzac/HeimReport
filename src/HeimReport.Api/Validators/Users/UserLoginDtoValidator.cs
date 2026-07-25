@@ -11,6 +11,6 @@ public class UserLoginDtoValidator : AbstractValidator<UserLoginDto>
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required.")
-            .MaximumLength(60).WithMessage("Password must not exceed 60 characters.");
+            .MaximumLength(100).WithMessage("Password must not exceed 100 characters.");
     }
 }

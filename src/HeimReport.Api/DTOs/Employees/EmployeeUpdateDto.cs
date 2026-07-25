@@ -1,4 +1,5 @@
 using HeimReport.Api.Enums;
+
 namespace HeimReport.Api.DTOs.Employees;
 
 public record EmployeeUpdateDto
@@ -17,4 +18,6 @@ public record EmployeeUpdateDto
     public required int DepartmentId { get; init; }
     public required int PositionId { get; init; }
     public int? ManagerId { get; init; }
+    public JobChangeReason? ChangeReason { get; init; }
+    public string? OtherReasonDetail { get; init; }
 }

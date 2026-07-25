@@ -1,3 +1,4 @@
+using HeimReport.Api.Services.AuditLogs;
 using HeimReport.Api.Services.Countries;
 using HeimReport.Api.Services.Departments;
 using HeimReport.Api.Services.Employees;
@@ -15,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
 
         return services;
     }
