@@ -22,10 +22,22 @@ public class EmployeeRepository(ApplicationDbContext context)
             .Include(e => e.Manager);
     }
 
+    public Task<Employee?> GetActiveByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+    {
+        return Context.Set<Employee>()
+            .FirstOrDefaultAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == Enums.EmployeeStatus.Active, cancellationToken);
+    }
+
     public Task<bool> ExistsActiveAsync(int employeeId, CancellationToken cancellationToken = default)
     {
         return Context.Set<Employee>()
             .AnyAsync(e => e.Id == employeeId && e.Status == Enums.EmployeeStatus.Active, cancellationToken);
+    }
+
+    public Task<bool> ExistsActiveByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+    {
+        return Context.Set<Employee>()
+            .AnyAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == Enums.EmployeeStatus.Active, cancellationToken);
     }
 
     public Task<bool> ExistsByNormalizedEmailAsync(

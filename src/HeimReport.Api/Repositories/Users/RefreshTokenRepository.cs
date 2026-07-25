@@ -30,4 +30,13 @@ public class RefreshTokenRepository(ApplicationDbContext context)
     {
         token.RevokedAt = DateTime.UtcNow;
     }
+
+    public async Task RevokeAllActiveByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var activeTokens = await GetActiveByUserIdAsync(userId, cancellationToken);
+        foreach (var token in activeTokens)
+        {
+            Revoke(token);
+        }
+    }
 }

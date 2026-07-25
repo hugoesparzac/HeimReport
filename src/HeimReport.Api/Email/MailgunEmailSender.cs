@@ -20,6 +20,30 @@ public sealed partial class MailgunEmailSender(
         Language language,
         CancellationToken cancellationToken = default)
     {
+        var verificationLink = $"{_options.VerificationBaseUrl}?token={Uri.EscapeDataString(token)}";
+        var (subject, htmlBody) = BuildVerificationTemplate(language, verificationLink);
+
+        await SendAsync(toEmail, subject, htmlBody, cancellationToken);
+
+        LogVerificationEmailSent(toEmail, language);
+    }
+
+    public async Task SendTemporaryPasswordAsync(
+        string toEmail,
+        string temporaryPassword,
+        Language language,
+        CancellationToken cancellationToken = default)
+    {
+        var (subject, htmlBody) = BuildTemporaryPasswordTemplate(language, temporaryPassword);
+
+        await SendAsync(toEmail, subject, htmlBody, cancellationToken);
+
+        LogTemporaryPasswordEmailSent(toEmail, language);
+    }
+
+    private async Task SendAsync(
+        string toEmail, string subject, string htmlBody, CancellationToken cancellationToken)
+    {
         var restClientOptions = new RestClientOptions("https://api.mailgun.net")
         {
             Authenticator = new HttpBasicAuthenticator("api", _options.ApiKey)
@@ -32,9 +56,6 @@ public sealed partial class MailgunEmailSender(
             AlwaysMultipartFormData = true
         };
 
-        var verificationLink = $"{_options.VerificationBaseUrl}?token={Uri.EscapeDataString(token)}";
-        var (subject, htmlBody) = BuildTemplate(language, verificationLink);
-
         request.AddParameter("from", $"{_options.FromName} <{_options.FromEmail}>");
         request.AddParameter("to", toEmail);
         request.AddParameter("subject", subject);
@@ -44,35 +65,44 @@ public sealed partial class MailgunEmailSender(
 
         if (response.StatusCode != HttpStatusCode.OK || !response.IsSuccessful)
         {
-            LogVerificationEmailFailed(
-                toEmail,
-                response.StatusCode,
-                response.ErrorMessage ?? response.Content);
+            LogEmailSendFailed(toEmail, response.StatusCode, response.ErrorMessage ?? response.Content);
 
             throw new InvalidOperationException(
-                $"Failed to send verification email via Mailgun. Status: {response.StatusCode}");
+                $"Failed to send email via Mailgun. Status: {response.StatusCode}");
         }
-
-        LogVerificationEmailSent(toEmail, language);
     }
 
-    private static (string Subject, string Html) BuildTemplate(
-        Language language,
-        string verificationLink)
+    private static (string Subject, string Html) BuildVerificationTemplate(
+        Language language, string verificationLink)
     {
         return language switch
         {
             Language.Spanish => (
                 "Verifica tu cuenta de HeimReport",
-                BuildSpanishHtml(verificationLink)),
+                BuildVerificationHtmlEs(verificationLink)),
 
             _ => (
                 "Verify your HeimReport account",
-                BuildEnglishHtml(verificationLink))
+                BuildVerificationHtmlEn(verificationLink))
         };
     }
 
-    private static string BuildEnglishHtml(string verificationLink) => $"""
+    private static (string Subject, string Html) BuildTemporaryPasswordTemplate(
+        Language language, string temporaryPassword)
+    {
+        return language switch
+        {
+            Language.Spanish => (
+                "Tu contraseña temporal de HeimReport",
+                BuildTemporaryPasswordHtmlEs(temporaryPassword)),
+
+            _ => (
+                "Your temporary HeimReport password",
+                BuildTemporaryPasswordHtmlEn(temporaryPassword))
+        };
+    }
+
+    private static string BuildVerificationHtmlEn(string verificationLink) => $"""
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
             <h2>Verify your email address</h2>
             <p>Thanks for registering with HeimReport. Please confirm your email address by clicking the button below:</p>
@@ -91,7 +121,7 @@ public sealed partial class MailgunEmailSender(
         </div>
         """;
 
-    private static string BuildSpanishHtml(string verificationLink) => $"""
+    private static string BuildVerificationHtmlEs(string verificationLink) => $"""
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
             <h2>Verifica tu correo electrónico</h2>
             <p>Gracias por registrarte en HeimReport. Por favor confirma tu correo electrónico haciendo clic en el siguiente botón:</p>
@@ -110,18 +140,52 @@ public sealed partial class MailgunEmailSender(
         </div>
         """;
 
+    private static string BuildTemporaryPasswordHtmlEn(string temporaryPassword) => $"""
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2>Your HeimReport account is ready</h2>
+            <p>An administrator has created an account for you. Use the temporary password below to log in:</p>
+            <p style="text-align: center; margin: 32px 0;">
+                <span style="background-color: #F3F4F6; color: #111827; padding: 12px 24px;
+                             border-radius: 6px; display: inline-block; font-family: monospace; font-size: 18px;">
+                    {temporaryPassword}
+                </span>
+            </p>
+            <p>For your security, we recommend changing this password as soon as you log in.</p>
+            <p style="color: #6B7280; font-size: 12px; margin-top: 32px;">
+                If you weren't expecting this email, please contact your HR department.
+            </p>
+        </div>
+        """;
+
+    private static string BuildTemporaryPasswordHtmlEs(string temporaryPassword) => $"""
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2>Tu cuenta de HeimReport está lista</h2>
+            <p>Un administrador ha creado una cuenta para ti. Usa la siguiente contraseña temporal para iniciar sesión:</p>
+            <p style="text-align: center; margin: 32px 0;">
+                <span style="background-color: #F3F4F6; color: #111827; padding: 12px 24px;
+                             border-radius: 6px; display: inline-block; font-family: monospace; font-size: 18px;">
+                    {temporaryPassword}
+                </span>
+            </p>
+            <p>Por tu seguridad, te recomendamos cambiar esta contraseña tan pronto inicies sesión.</p>
+            <p style="color: #6B7280; font-size: 12px; margin-top: 32px;">
+                Si no esperabas este correo, por favor contacta a tu departamento de Recursos Humanos.
+            </p>
+        </div>
+        """;
+
     [LoggerMessage(
         Level = LogLevel.Error,
-        Message = "Failed to send verification email to {Email}. Status: {StatusCode}. Error: {Error}")]
-    private partial void LogVerificationEmailFailed(
-        string email,
-        HttpStatusCode statusCode,
-        string? error);
+        Message = "Failed to send email to {Email}. Status: {StatusCode}. Error: {Error}")]
+    private partial void LogEmailSendFailed(string email, HttpStatusCode statusCode, string? error);
 
     [LoggerMessage(
         Level = LogLevel.Information,
         Message = "Verification email sent to {Email} in {Language}")]
-    private partial void LogVerificationEmailSent(
-        string email,
-        Language language);
+    private partial void LogVerificationEmailSent(string email, Language language);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Temporary password email sent to {Email} in {Language}")]
+    private partial void LogTemporaryPasswordEmailSent(string email, Language language);
 }

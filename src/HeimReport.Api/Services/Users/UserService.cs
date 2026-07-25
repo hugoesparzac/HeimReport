@@ -1,11 +1,13 @@
+using HeimReport.Api.DTOs.Common;
 using HeimReport.Api.DTOs.Users;
 using HeimReport.Api.Email;
 using HeimReport.Api.Entities;
 using HeimReport.Api.Exceptions;
 using HeimReport.Api.Mappers;
-using HeimReport.Api.Repositories.Users;
 using HeimReport.Api.Repositories.Employees;
+using HeimReport.Api.Repositories.Users;
 using HeimReport.Api.Security;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace HeimReport.Api.Services.Users;
@@ -49,38 +51,160 @@ public sealed partial class UserService(
             throw new DomainException("This username is already taken. Please choose a different one.");
         }
 
-        var user = dto.ToEntity(employee.Id);
-        user.PasswordHash = passwordHasher.Hash(dto.Password);
+        var passwordHash = passwordHasher.Hash(dto.Password);
+        var user = dto.ToEntity(employee.Id, passwordHash);
 
         var rawToken = tokenHasher.GenerateRawToken();
-        var tokenHash = tokenHasher.Hash(rawToken);
-        user.SetEmailVerificationToken(tokenHash, DateTime.UtcNow.Add(VerificationTokenLifetime));
+        user.EmailVerificationTokenHash = tokenHasher.Hash(rawToken);
+        user.EmailVerificationTokenExpiresAt = DateTime.UtcNow.Add(VerificationTokenLifetime);
 
         await userRepository.AddAsync(user, cancellationToken);
         await userRepository.SaveChangesAsync(cancellationToken);
 
-        await emailSender.SendEmailVerificationAsync(
-            employee.Email,
-            rawToken,
-            user.PreferredLanguage,
-            cancellationToken);
+        await emailSender.SendEmailVerificationAsync(employee.Email, rawToken, user.PreferredLanguage, cancellationToken);
 
         LogUserRegistered(employee.Id);
 
-        return user.ToResponseDto();
+        // TODO: AuditLogs (Action = "REGISTER_USER") — pendiente, pieza transversal diferida.
+
+        var created = await userRepository.GetByIdWithDetailsAsync(user.Id, cancellationToken)
+            ?? throw NotFoundException.ForEntity<User>(user.Id);
+
+        return created.ToResponseDto();
+    }
+
+    public async Task<UserResponseDto> ProvisionAsync(UserProvisionDto dto, CancellationToken cancellationToken = default)
+    {
+        var employee = await employeeRepository.GetByIdAsync(dto.EmployeeId, cancellationToken)
+            ?? throw NotFoundException.ForEntity<Employee>(dto.EmployeeId);
+
+        var temporaryPassword = passwordHasher.GenerateTemporaryPassword();
+        var passwordHash = passwordHasher.Hash(temporaryPassword);
+
+        var user = dto.ToEntity(passwordHash);
+
+        var rawToken = tokenHasher.GenerateRawToken();
+        user.EmailVerificationTokenHash = tokenHasher.Hash(rawToken);
+        user.EmailVerificationTokenExpiresAt = DateTime.UtcNow.Add(VerificationTokenLifetime);
+
+        await userRepository.AddAsync(user, cancellationToken);
+        await userRepository.SaveChangesAsync(cancellationToken);
+
+        await emailSender.SendTemporaryPasswordAsync(employee.Email, temporaryPassword, user.PreferredLanguage, cancellationToken);
+        await emailSender.SendEmailVerificationAsync(employee.Email, rawToken, user.PreferredLanguage, cancellationToken);
+
+        LogUserProvisioned(employee.Id, dto.Role);
+
+        // TODO: AuditLogs (Action = "PROVISION_USER") — pendiente.
+
+        var created = await userRepository.GetByIdWithDetailsAsync(user.Id, cancellationToken)
+            ?? throw NotFoundException.ForEntity<User>(user.Id);
+
+        return created.ToResponseDto();
+    }
+
+    // ===================== READ =====================
+
+    public async Task<PagedResultDto<UserResponseDto>> GetPagedAsync(UserQueryDto query, CancellationToken cancellationToken = default)
+    {
+        var baseQuery = userRepository.QueryWithDetails();
+
+        if (!string.IsNullOrWhiteSpace(query.SearchText))
+        {
+            var pattern = $"%{query.SearchText}%";
+            baseQuery = baseQuery.Where(u =>
+                EF.Functions.ILike(u.Username, pattern) ||
+                EF.Functions.ILike(u.Employee!.FirstName, pattern) ||
+                EF.Functions.ILike(u.Employee!.LastName, pattern) ||
+                EF.Functions.ILike(u.Employee!.Email, pattern));
+        }
+
+        if (query.Role.HasValue)
+        {
+            baseQuery = baseQuery.Where(u => u.Role == query.Role.Value);
+        }
+
+        if (query.IsActive.HasValue)
+        {
+            baseQuery = baseQuery.Where(u => u.IsActive == query.IsActive.Value);
+        }
+
+        baseQuery = baseQuery.OrderBy(u => u.Username);
+
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+        var entities = await baseQuery
+            .Skip((query.PageNumber - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResultDto<UserResponseDto>
+        {
+            Items = [.. entities.Select(u => u.ToResponseDto())],
+            TotalCount = totalCount,
+            PageNumber = query.PageNumber,
+            PageSize = query.PageSize
+        };
     }
 
     public async Task<UserResponseDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var user = await userRepository.GetByIdAsync(id, cancellationToken)
+        var user = await userRepository.GetByIdWithDetailsAsync(id, cancellationToken)
             ?? throw NotFoundException.ForEntity<User>(id);
 
         return user.ToResponseDto();
     }
 
-    public async Task VerifyEmailAsync(string rawToken, CancellationToken cancellationToken = default)
+    // ===================== UPDATE =====================
+
+    public async Task UpdateAsync(int id, UserUpdateDto dto, CancellationToken cancellationToken = default)
     {
-        var tokenHash = tokenHasher.Hash(rawToken);
+        var user = await userRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw NotFoundException.ForEntity<User>(id);
+
+        var isDeactivating = user.IsActive && !dto.IsActive;
+
+        dto.UpdateEntity(user);
+        userRepository.Update(user);
+
+        if (isDeactivating)
+        {
+            await refreshTokenRepository.RevokeAllActiveByUserIdAsync(id, cancellationToken);
+            LogUserDeactivatedSessionsRevoked(id);
+        }
+
+        await userRepository.SaveChangesAsync(cancellationToken);
+
+        // TODO: AuditLogs (Action = "UPDATE_USER") — pendiente.
+    }
+
+    // ===================== CHANGE PASSWORD =====================
+
+    public async Task ChangePasswordAsync(int userId, ChangePasswordDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await userRepository.GetByIdAsync(userId, cancellationToken)
+            ?? throw NotFoundException.ForEntity<User>(userId);
+
+        if (!passwordHasher.Verify(dto.CurrentPassword, user.PasswordHash))
+        {
+            throw new DomainException("Current password is incorrect.");
+        }
+
+        user.PasswordHash = passwordHasher.Hash(dto.NewPassword);
+        userRepository.Update(user);
+
+        await userRepository.SaveChangesAsync(cancellationToken);
+
+        LogPasswordChanged(userId);
+
+        // TODO: AuditLogs (Action = "CHANGE_PASSWORD") — pendiente.
+    }
+
+    // ===================== EMAIL VERIFICATION =====================
+
+    public async Task VerifyEmailAsync(VerifyEmailDto dto, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = tokenHasher.Hash(dto.Token);
 
         var user = await userRepository.GetByEmailVerificationTokenHashAsync(tokenHash, cancellationToken)
             ?? throw new DomainException("This verification link is invalid or has already been used.");
@@ -90,11 +214,46 @@ public sealed partial class UserService(
             throw new DomainException("This verification link has expired. Please request a new one.");
         }
 
-        user.ConfirmEmailVerification();
+        user.IsEmailVerified = true;
+        user.EmailVerificationTokenHash = null;
+        user.EmailVerificationTokenExpiresAt = null;
+
+        userRepository.Update(user);
         await userRepository.SaveChangesAsync(cancellationToken);
 
         LogEmailVerified(user.Id);
     }
+
+    public async Task ResendVerificationAsync(ResendEmailVerificationDto dto, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = dto.Email.Trim().ToUpperInvariant();
+        var employee = await employeeRepository.GetActiveByNormalizedEmailAsync(normalizedEmail, cancellationToken);
+
+        if (employee is null)
+        {
+            LogNonMatchingEmailForResend(dto.Email);
+            return;
+        }
+
+        var user = await userRepository.GetByEmployeeIdAsync(employee.Id, cancellationToken);
+        if (user?.IsEmailVerified ?? true)
+        {
+            return;
+        }
+
+        var rawToken = tokenHasher.GenerateRawToken();
+        user.EmailVerificationTokenHash = tokenHasher.Hash(rawToken);
+        user.EmailVerificationTokenExpiresAt = DateTime.UtcNow.Add(VerificationTokenLifetime);
+
+        userRepository.Update(user);
+        await userRepository.SaveChangesAsync(cancellationToken);
+
+        await emailSender.SendEmailVerificationAsync(employee.Email, rawToken, user.PreferredLanguage, cancellationToken);
+
+        LogVerificationEmailResent(employee.Id);
+    }
+
+    // ===================== LOGIN / REFRESH / LOGOUT =====================
 
     public async Task<TokenResponseDto> LoginAsync(UserLoginDto dto, CancellationToken cancellationToken = default)
     {
@@ -117,39 +276,21 @@ public sealed partial class UserService(
             throw new DomainException("Please verify your email address before logging in.");
         }
 
-        var accessToken = jwtProvider.GenerateToken(user);
+        var response = await IssueTokenResponseAsync(user, cancellationToken);
 
-        var rawRefreshToken = tokenHasher.GenerateRawToken();
-        var refreshTokenHash = tokenHasher.Hash(rawRefreshToken);
-        var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationInDays);
-
-        RefreshToken refreshToken = new()
-        {
-            UserId = user.Id,
-            TokenHash = refreshTokenHash,
-            ExpiresAt = refreshTokenExpiresAt,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
-
-        user.RecordLogin();
+        user.LastLoginAt = DateTime.UtcNow;
+        userRepository.Update(user);
 
         await refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
         LogUserLoggedIn(user.Id);
 
-        return new TokenResponseDto
-        {
-            AccessToken = accessToken,
-            RefreshToken = rawRefreshToken,
-            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationInMinutes)
-        };
+        return response;
     }
 
-    public async Task<TokenResponseDto> RefreshAsync(string rawRefreshToken, CancellationToken cancellationToken = default)
+    public async Task<TokenResponseDto> RefreshAsync(RefreshTokenRequestDto dto, CancellationToken cancellationToken = default)
     {
-        var tokenHash = tokenHasher.Hash(rawRefreshToken);
+        var tokenHash = tokenHasher.Hash(dto.RefreshToken);
 
         var storedToken = await refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken)
             ?? throw new DomainException("Invalid refresh token.");
@@ -180,39 +321,21 @@ public sealed partial class UserService(
                 "Ensure the query includes .Include(rt => rt.User).ThenInclude(u => u.Employee).");
         }
 
-        var newAccessToken = jwtProvider.GenerateToken(storedToken.User);
-        var newRawRefreshToken = tokenHasher.GenerateRawToken();
-        var newTokenHash = tokenHasher.Hash(newRawRefreshToken);
-        var newExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationInDays);
+        var response = await IssueTokenResponseAsync(storedToken.User, cancellationToken, replacingTokenHash: storedToken.TokenHash);
 
-        var newRefreshToken = new RefreshToken
-        {
-            UserId = storedToken.UserId,
-            TokenHash = newTokenHash,
-            ExpiresAt = newExpiresAt,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await refreshTokenRepository.AddAsync(newRefreshToken, cancellationToken);
-
-        storedToken.ReplacedByTokenHash = newTokenHash;
+        storedToken.ReplacedByTokenHash = tokenHasher.Hash(response.RefreshToken);
         refreshTokenRepository.Revoke(storedToken);
 
         await refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
         LogRefreshTokenRotated(storedToken.UserId);
 
-        return new TokenResponseDto
-        {
-            AccessToken = newAccessToken,
-            RefreshToken = newRawRefreshToken,
-            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationInMinutes)
-        };
+        return response;
     }
 
-    public async Task LogoutAsync(string rawRefreshToken, CancellationToken cancellationToken = default)
+    public async Task LogoutAsync(LogoutDto dto, CancellationToken cancellationToken = default)
     {
-        var tokenHash = tokenHasher.Hash(rawRefreshToken);
+        var tokenHash = tokenHasher.Hash(dto.RefreshToken);
         var storedToken = await refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
 
         if (storedToken is null || storedToken.RevokedAt is not null)
@@ -226,37 +349,44 @@ public sealed partial class UserService(
         LogUserLoggedOut(storedToken.UserId);
     }
 
-    public async Task ResendVerificationAsync(ResendEmailVerificationDto dto, CancellationToken cancellationToken = default)
+    // ===================== HELPERS PRIVADOS =====================
+
+    private async Task<TokenResponseDto> IssueTokenResponseAsync(
+        User user, CancellationToken cancellationToken, string? replacingTokenHash = null)
     {
-        var normalizedEmail = dto.Email.Trim().ToUpperInvariant();
-        var employee = await employeeRepository.GetActiveByNormalizedEmailAsync(normalizedEmail, cancellationToken);
-
-        if (employee is null)
+        if (!string.IsNullOrEmpty(replacingTokenHash))
         {
-            LogNonMatchingEmailForResend(dto.Email);
-            return;
+            var tokenToRevoke = await refreshTokenRepository.GetByTokenHashAsync(replacingTokenHash, cancellationToken);
+            if (tokenToRevoke is not null)
+            {
+                refreshTokenRepository.Revoke(tokenToRevoke);
+            }
         }
 
-        var user = await userRepository.GetByEmployeeIdAsync(employee.Id, cancellationToken);
-        if (user?.IsEmailVerified is not false)
+        var accessToken = jwtProvider.GenerateToken(user);
+
+        var rawRefreshToken = tokenHasher.GenerateRawToken();
+        var refreshTokenHash = tokenHasher.Hash(rawRefreshToken);
+
+        var refreshToken = new RefreshToken
         {
-            return;
-        }
+            UserId = user.Id,
+            TokenHash = refreshTokenHash,
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationInDays),
+            CreatedAt = DateTime.UtcNow
+        };
 
-        var rawToken = tokenHasher.GenerateRawToken();
-        var tokenHash = tokenHasher.Hash(rawToken);
-        user.SetEmailVerificationToken(tokenHash, DateTime.UtcNow.Add(VerificationTokenLifetime));
+        await refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
 
-        await userRepository.SaveChangesAsync(cancellationToken);
-
-        await emailSender.SendEmailVerificationAsync(
-            employee.Email,
-            rawToken,
-            user.PreferredLanguage,
-            cancellationToken);
-
-        LogVerificationEmailResent(employee.Id);
+        return new TokenResponseDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = rawRefreshToken,
+            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationInMinutes)
+        };
     }
+
+    // ===================== LOGGING =====================
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Registration attempted for an email with no matching active employee: {Email}")]
     private partial void LogNoMatchingEmployeeForRegistration(string email);
@@ -266,6 +396,9 @@ public sealed partial class UserService(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User registered successfully for EmployeeId {EmployeeId}")]
     private partial void LogUserRegistered(int employeeId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User provisioned for EmployeeId {EmployeeId} with role {Role}")]
+    private partial void LogUserProvisioned(int employeeId, Enums.SystemRole role);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Email verified successfully for UserId {UserId}")]
     private partial void LogEmailVerified(int userId);
@@ -290,4 +423,10 @@ public sealed partial class UserService(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Verification email resent for EmployeeId {EmployeeId}")]
     private partial void LogVerificationEmailResent(int employeeId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Password changed successfully for UserId {UserId}")]
+    private partial void LogPasswordChanged(int userId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User {UserId} deactivated; all active sessions revoked")]
+    private partial void LogUserDeactivatedSessionsRevoked(int userId);
 }
