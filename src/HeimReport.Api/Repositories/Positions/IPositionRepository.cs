@@ -6,4 +6,5 @@ public interface IPositionRepository : IRepository<Position>
 {
     Task<bool> ExistsByTitleAsync(string title, int? excludeId, CancellationToken cancellationToken = default);
     Task<bool> IsReferencedByActiveEmployeeAsync(int id, CancellationToken cancellationToken = default);
+    Task<bool> ExistsActiveAsync(int id, CancellationToken cancellationToken = default);
 }

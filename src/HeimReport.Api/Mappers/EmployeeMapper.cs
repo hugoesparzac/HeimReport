@@ -1,12 +1,26 @@
 using HeimReport.Api.DTOs.Employees;
 using HeimReport.Api.Entities;
-using HeimReport.Api.Enums;
 
 namespace HeimReport.Api.Mappers;
+
 public static class EmployeeMapper
 {
     public static EmployeeResponseDto ToResponseDto(this Employee employee)
     {
+        if (employee.Country is null || employee.Department is null || employee.Position is null)
+        {
+            throw new InvalidOperationException(
+                $"Employee with Id {employee.Id} was loaded without its related Country/Department/Position. " +
+                "Ensure the query includes .Include(e => e.Country).Include(e => e.Department).Include(e => e.Position).");
+        }
+
+        if (employee.ManagerId.HasValue && employee.Manager is null)
+        {
+            throw new InvalidOperationException(
+                $"Employee with Id {employee.Id} has ManagerId {employee.ManagerId} but the Manager navigation was not loaded. " +
+                "Ensure the query includes .Include(e => e.Manager).");
+        }
+
         return new EmployeeResponseDto
         {
             Id = employee.Id,
@@ -22,13 +36,13 @@ public static class EmployeeMapper
             Status = employee.Status,
             CurrentSalary = employee.CurrentSalary,
             CountryId = employee.CountryId,
-            CountryName = employee.Country?.Name ?? string.Empty,
+            CountryName = employee.Country.Name,
             DepartmentId = employee.DepartmentId,
-            DepartmentName = employee.Department?.Name ?? string.Empty,
+            DepartmentName = employee.Department.Name,
             PositionId = employee.PositionId,
-            PositionTitle = employee.Position?.Title ?? string.Empty,
+            PositionTitle = employee.Position.Title,
             ManagerId = employee.ManagerId,
-            ManagerFullName = employee.Manager != null
+            ManagerFullName = employee.Manager is not null
                 ? $"{employee.Manager.FirstName} {employee.Manager.LastName}"
                 : null
         };
@@ -41,13 +55,13 @@ public static class EmployeeMapper
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
-            NormalizedEmail = dto.Email.Trim().ToUpperInvariant(),
+            NormalizedEmail = dto.Email.ToUpperInvariant(),
             NationalId = dto.NationalId,
             BirthDate = dto.BirthDate,
             HireDate = dto.HireDate,
             ContractType = dto.ContractType,
             ContractEndDate = dto.ContractEndDate,
-            Status = EmployeeStatus.Active,
+            Status = HeimReport.Api.Enums.EmployeeStatus.Active,
             CurrentSalary = dto.CurrentSalary,
             CountryId = dto.CountryId,
             DepartmentId = dto.DepartmentId,
@@ -56,12 +70,12 @@ public static class EmployeeMapper
         };
     }
 
-    public static void ApplyUpdate(this Employee employee, EmployeeUpdateDto dto)
+    public static void UpdateEntity(this EmployeeUpdateDto dto, Employee employee)
     {
         employee.FirstName = dto.FirstName;
         employee.LastName = dto.LastName;
         employee.Email = dto.Email;
-        employee.NormalizedEmail = dto.Email.Trim().ToUpperInvariant();
+        employee.NormalizedEmail = dto.Email.ToUpperInvariant();
         employee.NationalId = dto.NationalId;
         employee.BirthDate = dto.BirthDate;
         employee.ContractType = dto.ContractType;

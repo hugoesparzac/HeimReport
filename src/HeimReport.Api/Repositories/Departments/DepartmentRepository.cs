@@ -21,4 +21,10 @@ public class DepartmentRepository(ApplicationDbContext context)
         return Context.Set<Employee>()
             .AnyAsync(e => e.DepartmentId == id && e.Status == EmployeeStatus.Active, cancellationToken);
     }
+
+    public Task<bool> ExistsActiveAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return Context.Set<Department>()
+            .AnyAsync(d => d.Id == id && d.IsActive, cancellationToken);
+    }
 }
