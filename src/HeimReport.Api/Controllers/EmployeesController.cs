@@ -15,7 +15,8 @@ public class EmployeesController(
     IEmployeeService employeeService,
     IValidator<EmployeeCreateDto> createValidator,
     IValidator<EmployeeUpdateDto> updateValidator,
-    IValidator<EmployeeBulkTerminationDto> terminationValidator) : ControllerBase
+    IValidator<EmployeeBulkTerminationDto> terminationValidator,
+    IValidator<UploadEmployeePhotoDto> uploadPhotoValidator) : ControllerBase
 {
     [HttpGet]
     [Authorize(Roles = "Admin,HR")]
@@ -82,5 +83,25 @@ public class EmployeesController(
 
         var result = await employeeService.TerminateManyAsync(dto, cancellationToken);
         return Ok(result);
+    }
+
+    [HttpPost("{id:int}/photo")]
+    [Authorize(Roles = "Admin,HR")]
+    [RequestSizeLimit(5_000_000)]
+    public async Task<ActionResult<EmployeeResponseDto>> UploadPhoto(
+        int id, [FromForm] UploadEmployeePhotoDto dto, CancellationToken cancellationToken)
+    {
+        await uploadPhotoValidator.ValidateOrThrowAsync(dto, cancellationToken);
+
+        var result = await employeeService.UploadPhotoAsync(id, dto.Photo, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:int}/photo")]
+    [Authorize(Roles = "Admin,HR")]
+    public async Task<IActionResult> RemovePhoto(int id, CancellationToken cancellationToken)
+    {
+        await employeeService.RemovePhotoAsync(id, cancellationToken);
+        return NoContent();
     }
 }

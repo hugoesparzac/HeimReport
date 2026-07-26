@@ -27,6 +27,7 @@ public static class EmployeeMapper
             FirstName = employee.FirstName,
             LastName = employee.LastName,
             Email = employee.Email,
+            PhotoUrl = employee.PhotoUrl,
             NationalId = employee.NationalId,
             BirthDate = employee.BirthDate,
             HireDate = employee.HireDate,

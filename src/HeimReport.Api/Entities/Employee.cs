@@ -10,6 +10,8 @@ public class Employee : IAuditableEntity
     public required string LastName { get; set; }
     public required string Email { get; set; }
     public required string NormalizedEmail { get; set; }
+    public string? PhotoUrl { get; set; }
+    public string? PhotoPublicId { get; set; }
     public required string NationalId { get; set; }
     public required DateTime BirthDate { get; set; }
     public required DateTime HireDate { get; set; }

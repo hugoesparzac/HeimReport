@@ -1,10 +1,12 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using HeimReport.Api.Data;
+using HeimReport.Api.Data.Seeding;
 using HeimReport.Api.Email;
 using HeimReport.Api.ExceptionHandlers;
 using HeimReport.Api.Extensions;
 using HeimReport.Api.Security;
+using HeimReport.Api.Storage;
 using HeimReport.Api.Validators.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,6 +36,7 @@ builder.Services.AddCorsPolicy(builder.Configuration);
 builder.Services.AddValidatorsFromAssemblyContaining<UserRegistrationDtoValidator>();
 
 builder.Services.AddEmailSender(builder.Configuration);
+builder.Services.AddPhotoStorage(builder.Configuration);
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -45,6 +48,9 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+    await seeder.SeedAsync();
     app.MapOpenApi();
 }
 
