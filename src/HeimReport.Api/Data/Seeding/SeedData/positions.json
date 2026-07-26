@@ -1,0 +1,8 @@
+[
+  { "title": "Operator", "careerLevel": 1, "isCritical": false },
+  { "title": "Analyst", "careerLevel": 2, "isCritical": false },
+  { "title": "Senior Specialist", "careerLevel": 3, "isCritical": false },
+  { "title": "Coordinator", "careerLevel": 4, "isCritical": false },
+  { "title": "HR Manager", "careerLevel": 5, "isCritical": true },
+  { "title": "Director", "careerLevel": 6, "isCritical": true }
+]

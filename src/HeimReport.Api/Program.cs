@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using HeimReport.Api.Data;
+using HeimReport.Api.Data.Seeding;
 using HeimReport.Api.Email;
 using HeimReport.Api.ExceptionHandlers;
 using HeimReport.Api.Extensions;
@@ -45,6 +46,9 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+    await seeder.SeedAsync();
     app.MapOpenApi();
 }
 
