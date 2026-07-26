@@ -224,6 +224,8 @@ public sealed partial class DataSeeder(
             DepartmentId = department.Id,
             PositionId = position.Id,
             ManagerId = managerId,
+            PhotoUrl = $"https://i.pravatar.cc/500?u=seed-employee-{_globalCounter}",
+            PhotoPublicId = null,
             CreatedAt = DateTime.UtcNow
         };
     }

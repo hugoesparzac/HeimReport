@@ -23,6 +23,10 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(x => x.NormalizedEmail)
             .IsRequired()
             .HasMaxLength(100);
+        builder.Property(x => x.PhotoUrl)
+            .HasMaxLength(500);
+        builder.Property(x => x.PhotoPublicId)
+            .HasMaxLength(255);
         builder.Property(x => x.NationalId)
             .IsRequired()
             .HasMaxLength(50);

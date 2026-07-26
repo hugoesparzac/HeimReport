@@ -6,6 +6,7 @@ using HeimReport.Api.Exceptions;
 using HeimReport.Api.Mappers;
 using HeimReport.Api.Repositories.Employees;
 using HeimReport.Api.Services.AuditLogs;
+using HeimReport.Api.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeimReport.Api.Services.Employees;
@@ -13,7 +14,8 @@ namespace HeimReport.Api.Services.Employees;
 public class EmployeeService(
     IEmployeeRepository employeeRepository,
     IEmployeeJobHistoryRepository jobHistoryRepository,
-    IAuditLogService auditLogService) : IEmployeeService
+    IAuditLogService auditLogService,
+    IPhotoStorageService photoStorageService) : IEmployeeService
 {
     public async Task<PagedResultDto<EmployeeResponseDto>> GetPagedAsync(
         EmployeeQueryDto query, CancellationToken cancellationToken = default)
@@ -222,6 +224,65 @@ public class EmployeeService(
         await employeeRepository.SaveChangesAsync(cancellationToken);
 
         return new BulkOperationResultDto { SucceededIds = succeeded, Failed = failed };
+    }
+
+    public async Task<EmployeeResponseDto> UploadPhotoAsync(
+        int id, IFormFile photo, CancellationToken cancellationToken = default)
+    {
+        var employee = await employeeRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw NotFoundException.ForEntity<Employee>(id);
+
+        if (!string.IsNullOrEmpty(employee.PhotoPublicId))
+        {
+            await photoStorageService.DeleteAsync(employee.PhotoPublicId, cancellationToken);
+        }
+
+        await using var stream = photo.OpenReadStream();
+        var result = await photoStorageService.UploadAsync(stream, photo.FileName, cancellationToken);
+
+        var oldValues = new { employee.PhotoUrl };
+
+        employee.PhotoUrl = result.Url;
+        employee.PhotoPublicId = result.PublicId;
+
+        employeeRepository.Update(employee);
+        await employeeRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync(
+            "UPDATE_EMPLOYEE_PHOTO", nameof(Employee), id,
+            oldValues, new { employee.PhotoUrl },
+            cancellationToken);
+
+        var updated = await employeeRepository.GetByIdWithDetailsAsync(id, cancellationToken)
+            ?? throw NotFoundException.ForEntity<Employee>(id);
+
+        return updated.ToResponseDto();
+    }
+
+    public async Task RemovePhotoAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var employee = await employeeRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw NotFoundException.ForEntity<Employee>(id);
+
+        if (string.IsNullOrEmpty(employee.PhotoPublicId))
+        {
+            return;
+        }
+
+        await photoStorageService.DeleteAsync(employee.PhotoPublicId, cancellationToken);
+
+        var oldValues = new { employee.PhotoUrl };
+
+        employee.PhotoUrl = null;
+        employee.PhotoPublicId = null;
+
+        employeeRepository.Update(employee);
+        await employeeRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync(
+            "REMOVE_EMPLOYEE_PHOTO", nameof(Employee), id,
+            oldValues, newValues: null,
+            cancellationToken: cancellationToken);
     }
 
     private static bool IsOnLeave(EmployeeStatus status) =>

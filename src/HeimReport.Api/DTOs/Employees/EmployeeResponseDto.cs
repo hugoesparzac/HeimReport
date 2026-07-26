@@ -8,6 +8,7 @@ public record EmployeeResponseDto
     public required string FirstName { get; init; }
     public required string LastName { get; init; }
     public required string Email { get; init; }
+    public string? PhotoUrl { get; init; }
     public required string NationalId { get; init; }
     public DateTime BirthDate { get; init; }
     public DateTime HireDate { get; init; }
