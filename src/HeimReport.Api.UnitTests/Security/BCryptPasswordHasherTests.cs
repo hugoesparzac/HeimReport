@@ -22,11 +22,16 @@ public class BCryptPasswordHasherTests
     [Fact]
     public void Verify_ShouldReturnFalse_WhenPasswordDoesNotMatchHash()
     {
+        // Arrange
+        const string correctPassword = "CorrectPassword1!";
+        const string wrongPassword = "WrongPassword1!";
+        var hash = _sut.Hash(correctPassword);
+
         // Act
-        var hash = _sut.Hash("CorrectPassword1!");
+        var result = _sut.Verify(wrongPassword, hash);
 
         // Assert
-        Assert.False(_sut.Verify("WrongPassword1!", hash));
+        Assert.False(result);
     }
 
     [Fact]
@@ -48,8 +53,11 @@ public class BCryptPasswordHasherTests
     [Fact]
     public void Hash_ShouldProduceA60CharacterHash()
     {
+        // Arrange
+        const string password = "AnyPassword1!";
+
         // Act
-        var hash = _sut.Hash("AnyPassword1!");
+        var hash = _sut.Hash(password);
 
         // Assert
         Assert.Equal(60, hash.Length);
@@ -83,8 +91,10 @@ public class BCryptPasswordHasherTests
     [Fact]
     public void GenerateTemporaryPassword_ShouldProduceAPasswordThatHashesAndVerifiesCorrectly()
     {
-        // Act
+        // Arrange
         var password = _sut.GenerateTemporaryPassword();
+
+        // Act
         var hash = _sut.Hash(password);
 
         // Assert
