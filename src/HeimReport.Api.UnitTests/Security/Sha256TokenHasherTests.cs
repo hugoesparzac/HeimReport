@@ -46,4 +46,26 @@ public class Sha256TokenHasherTests
         Assert.NotEqual(token1, token2);
         Assert.False(string.IsNullOrWhiteSpace(token1));
     }
+
+    [Fact]
+    public void GenerateRawToken_ShouldProduceANonEmptyValue()
+    {
+        // Act
+        var token = _sut.GenerateRawToken();
+
+        // Assert
+        Assert.False(string.IsNullOrWhiteSpace(token));
+    }
+
+    [Fact]
+    public void GenerateRawToken_ThenHash_ShouldBeConsistentAcrossCalls()
+    {
+        // Act
+        var rawToken = _sut.GenerateRawToken();
+        var hash1 = _sut.Hash(rawToken);
+        var hash2 = _sut.Hash(rawToken);
+
+        // Assert
+        Assert.Equal(hash1, hash2);
+    }
 }
