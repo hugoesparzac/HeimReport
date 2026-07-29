@@ -66,6 +66,7 @@ public class UserServiceTests
     [Fact]
     public async Task RegisterAsync_ShouldSucceed_WhenEmployeeIsActiveAndHasNoAccount()
     {
+        // Arrange
         var employee = GetEmployeeFaker().Generate();
         var dto = GetRegistrationDtoFaker(employee.Email).Generate();
 
@@ -94,8 +95,10 @@ public class UserServiceTests
             .Setup(r => r.GetByIdWithDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdUser);
 
+        // Act
         var result = await _sut.RegisterAsync(dto);
 
+        // Assert
         Assert.NotNull(result);
         Assert.Equal(dto.PreferredLanguage, result.PreferredLanguage);
         Assert.False(result.IsEmailVerified);
@@ -122,13 +125,18 @@ public class UserServiceTests
     [Fact]
     public async Task RegisterAsync_ShouldThrow_WhenEmailDoesNotMatchAnyActiveEmployee()
     {
+        // Arrange
         var dto = GetRegistrationDtoFaker().Generate();
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Employee?)null);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        // Act
+        Task Act() => _sut.RegisterAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("Unable to complete registration with the provided information.", exception.Message);
 
         _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -137,6 +145,7 @@ public class UserServiceTests
     [Fact]
     public async Task RegisterAsync_ShouldThrow_WhenEmployeeAlreadyHasAnAccount()
     {
+        // Arrange
         var employee = GetEmployeeFaker().Generate();
         var dto = GetRegistrationDtoFaker(employee.Email).Generate();
         var existingUser = GetUserFaker(employeeId: employee.Id).Generate();
@@ -149,7 +158,11 @@ public class UserServiceTests
             .Setup(r => r.GetByEmployeeIdAsync(employee.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingUser);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        // Act
+        Task Act() => _sut.RegisterAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("Unable to complete registration with the provided information.", exception.Message);
 
         _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -158,6 +171,7 @@ public class UserServiceTests
     [Fact]
     public async Task RegisterAsync_ShouldThrow_WhenUsernameIsAlreadyTaken()
     {
+        // Arrange
         var employee = GetEmployeeFaker().Generate();
         var dto = GetRegistrationDtoFaker(employee.Email).Generate();
         var someoneElsesAccount = GetUserFaker(employeeId: 999, username: dto.Username).Generate();
@@ -174,7 +188,11 @@ public class UserServiceTests
             .Setup(r => r.GetByNormalizedUsernameAsync(dto.Username.ToUpperInvariant(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(someoneElsesAccount);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RegisterAsync(dto));
+        // Act
+        Task Act() => _sut.RegisterAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("This username is already taken. Please choose a different one.", exception.Message);
 
         _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -185,6 +203,7 @@ public class UserServiceTests
     [Fact]
     public async Task ProvisionAsync_ShouldSucceed_WhenEmployeeExists()
     {
+        // Arrange
         var employee = GetEmployeeFaker().Generate();
         var dto = GetProvisionDtoFaker(employee.Id).Generate();
 
@@ -205,8 +224,10 @@ public class UserServiceTests
             .Setup(r => r.GetByIdWithDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdUser);
 
+        // Act
         var result = await _sut.ProvisionAsync(dto);
 
+        // Assert
         Assert.NotNull(result);
         Assert.Equal(dto.Role, result.Role);
 
@@ -232,13 +253,18 @@ public class UserServiceTests
     [Fact]
     public async Task ProvisionAsync_ShouldThrow_WhenEmployeeDoesNotExist()
     {
+        // Arrange
         var dto = GetProvisionDtoFaker(employeeId: 999).Generate();
 
         _employeeRepository
             .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Employee?)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _sut.ProvisionAsync(dto));
+        // Act
+        Task Act() => _sut.ProvisionAsync(dto);
+
+        // Assert
+        await Assert.ThrowsAsync<NotFoundException>(Act);
 
         _userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -248,6 +274,7 @@ public class UserServiceTests
     [Fact]
     public async Task GetPagedAsync_ShouldReturnMappedPagedResult()
     {
+        // Arrange
         var employee1 = GetEmployeeFaker().Generate();
         var employee2 = GetEmployeeFaker().Generate();
 
@@ -264,8 +291,10 @@ public class UserServiceTests
 
         var query = new UserQueryDto { PageNumber = 1, PageSize = 10 };
 
+        // Act
         var result = await _sut.GetPagedAsync(query);
 
+        // Assert
         Assert.Equal(2, result.TotalCount);
         Assert.Equal(2, result.Items.Count);
     }
@@ -273,6 +302,7 @@ public class UserServiceTests
     [Fact]
     public async Task GetByIdAsync_ShouldReturnUser_WhenFound()
     {
+        // Arrange
         var employee = GetEmployeeFaker().Generate();
         var user = GetUserFaker(employeeId: employee.Id).Generate();
         user.Employee = employee;
@@ -281,19 +311,26 @@ public class UserServiceTests
             .Setup(r => r.GetByIdWithDetailsAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
+        // Act
         var result = await _sut.GetByIdAsync(user.Id);
 
+        // Assert
         Assert.Equal(user.Id, result.Id);
     }
 
     [Fact]
     public async Task GetByIdAsync_ShouldThrow_WhenNotFound()
     {
+        // Arrange
         _userRepository
             .Setup(r => r.GetByIdWithDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _sut.GetByIdAsync(1));
+        // Act
+        Task Act() => _sut.GetByIdAsync(1);
+
+        // Assert
+        await Assert.ThrowsAsync<NotFoundException>(Act);
     }
 
     // ===================== UPDATE =====================
@@ -301,6 +338,7 @@ public class UserServiceTests
     [Fact]
     public async Task UpdateAsync_ShouldUpdateFields_WithoutRevokingTokens_WhenStayingActive()
     {
+        // Arrange
         var user = GetUserFaker(isActive: true).Generate();
         var dto = new UserUpdateDto { Role = SystemRole.HR, IsActive = true, PreferredLanguage = Language.Spanish };
 
@@ -308,8 +346,10 @@ public class UserServiceTests
             .Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
+        // Act
         await _sut.UpdateAsync(user.Id, dto);
 
+        // Assert
         Assert.Equal(SystemRole.HR, user.Role);
         Assert.Equal(Language.Spanish, user.PreferredLanguage);
 
@@ -325,6 +365,7 @@ public class UserServiceTests
     [Fact]
     public async Task UpdateAsync_ShouldRevokeAllActiveTokens_WhenDeactivatingUser()
     {
+        // Arrange
         var user = GetUserFaker(isActive: true).Generate();
         var dto = new UserUpdateDto { Role = user.Role, IsActive = false, PreferredLanguage = user.PreferredLanguage };
 
@@ -332,8 +373,10 @@ public class UserServiceTests
             .Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
+        // Act
         await _sut.UpdateAsync(user.Id, dto);
 
+        // Assert
         Assert.False(user.IsActive);
 
         _refreshTokenRepository.Verify(
@@ -343,13 +386,18 @@ public class UserServiceTests
     [Fact]
     public async Task UpdateAsync_ShouldThrow_WhenUserNotFound()
     {
+        // Arrange
         _userRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var dto = new UserUpdateDto { Role = SystemRole.Employee, IsActive = true, PreferredLanguage = Language.English };
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _sut.UpdateAsync(1, dto));
+        // Act
+        Task Act() => _sut.UpdateAsync(1, dto);
+
+        // Assert
+        await Assert.ThrowsAsync<NotFoundException>(Act);
     }
 
     // ===================== CHANGE PASSWORD =====================
@@ -357,6 +405,7 @@ public class UserServiceTests
     [Fact]
     public async Task ChangePasswordAsync_ShouldSucceed_WhenCurrentPasswordIsCorrect()
     {
+        // Arrange
         var user = GetUserFaker().Generate();
         var dto = new ChangePasswordDto
         {
@@ -372,8 +421,10 @@ public class UserServiceTests
         _passwordHasher.Setup(h => h.Verify(dto.CurrentPassword, user.PasswordHash)).Returns(true);
         _passwordHasher.Setup(h => h.Hash(dto.NewPassword)).Returns("new-hashed-password");
 
+        // Act
         await _sut.ChangePasswordAsync(user.Id, dto);
 
+        // Assert
         Assert.Equal("new-hashed-password", user.PasswordHash);
 
         _auditLogService.Verify(a => a.LogAsync(
@@ -385,6 +436,7 @@ public class UserServiceTests
     [Fact]
     public async Task ChangePasswordAsync_ShouldThrow_WhenCurrentPasswordIsIncorrect()
     {
+        // Arrange
         var user = GetUserFaker().Generate();
         var dto = new ChangePasswordDto
         {
@@ -399,7 +451,11 @@ public class UserServiceTests
 
         _passwordHasher.Setup(h => h.Verify(dto.CurrentPassword, user.PasswordHash)).Returns(false);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.ChangePasswordAsync(user.Id, dto));
+        // Act
+        Task Act() => _sut.ChangePasswordAsync(user.Id, dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("Current password is incorrect.", exception.Message);
 
         _userRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -410,6 +466,7 @@ public class UserServiceTests
     [Fact]
     public async Task VerifyEmailAsync_ShouldSucceed_WhenTokenIsValidAndNotExpired()
     {
+        // Arrange
         const string tokenHash = "hashed-token";
         var dto = new VerifyEmailDto { Token = "raw-token" };
 
@@ -425,8 +482,10 @@ public class UserServiceTests
             .Setup(r => r.GetByEmailVerificationTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
+        // Act
         await _sut.VerifyEmailAsync(dto);
 
+        // Assert
         Assert.True(user.IsEmailVerified);
         Assert.Null(user.EmailVerificationTokenHash);
     }
@@ -434,6 +493,7 @@ public class UserServiceTests
     [Fact]
     public async Task VerifyEmailAsync_ShouldThrow_WhenTokenIsExpired()
     {
+        // Arrange
         const string tokenHash = "hashed-token";
         var dto = new VerifyEmailDto { Token = "raw-token" };
 
@@ -449,13 +509,18 @@ public class UserServiceTests
             .Setup(r => r.GetByEmailVerificationTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.VerifyEmailAsync(dto));
+        // Act
+        Task Act() => _sut.VerifyEmailAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("This verification link has expired. Please request a new one.", exception.Message);
     }
 
     [Fact]
     public async Task VerifyEmailAsync_ShouldThrow_WhenTokenIsNotFound()
     {
+        // Arrange
         var dto = new VerifyEmailDto { Token = "invalid-token" };
 
         _tokenHasher.Setup(h => h.Hash(dto.Token)).Returns("hashed-token");
@@ -464,13 +529,18 @@ public class UserServiceTests
             .Setup(r => r.GetByEmailVerificationTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.VerifyEmailAsync(dto));
+        // Act
+        Task Act() => _sut.VerifyEmailAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("This verification link is invalid or has already been used.", exception.Message);
     }
 
     [Fact]
     public async Task ResendVerificationAsync_ShouldSendNewToken_WhenUserExistsAndEmailNotVerified()
     {
+        // Arrange
         var employee = GetEmployeeFaker().Generate();
         var user = GetUserFaker(employeeId: employee.Id, isEmailVerified: false).Generate();
         var dto = new ResendEmailVerificationDto { Email = employee.Email };
@@ -486,8 +556,10 @@ public class UserServiceTests
         _tokenHasher.Setup(h => h.GenerateRawToken()).Returns("new-raw-token");
         _tokenHasher.Setup(h => h.Hash("new-raw-token")).Returns("new-hashed-token");
 
+        // Act
         await _sut.ResendVerificationAsync(dto);
 
+        // Assert
         Assert.Equal("new-hashed-token", user.EmailVerificationTokenHash);
 
         _emailSender.Verify(
@@ -498,14 +570,17 @@ public class UserServiceTests
     [Fact]
     public async Task ResendVerificationAsync_ShouldDoNothing_WhenEmployeeDoesNotMatchAnyActiveEmployee()
     {
+        // Arrange
         var dto = new ResendEmailVerificationDto { Email = "unknown@heimreport.com" };
 
         _employeeRepository
             .Setup(r => r.GetActiveByNormalizedEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Employee?)null);
 
+        // Act
         await _sut.ResendVerificationAsync(dto);
 
+        // Assert
         _emailSender.Verify(
             e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -514,6 +589,7 @@ public class UserServiceTests
     [Fact]
     public async Task ResendVerificationAsync_ShouldDoNothing_WhenEmailIsAlreadyVerified()
     {
+        // Arrange
         var employee = GetEmployeeFaker().Generate();
         var user = GetUserFaker(employeeId: employee.Id, isEmailVerified: true).Generate();
         var dto = new ResendEmailVerificationDto { Email = employee.Email };
@@ -526,8 +602,10 @@ public class UserServiceTests
             .Setup(r => r.GetByEmployeeIdAsync(employee.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
+        // Act
         await _sut.ResendVerificationAsync(dto);
 
+        // Assert
         _emailSender.Verify(
             e => e.SendEmailVerificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Language>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -538,6 +616,7 @@ public class UserServiceTests
     [Fact]
     public async Task LoginAsync_ShouldSucceed_WhenCredentialsAreValidAndAccountIsVerifiedAndActive()
     {
+        // Arrange
         var user = GetUserFaker().Generate();
         var dto = GetLoginDtoFaker(user.Username).Generate();
 
@@ -550,8 +629,10 @@ public class UserServiceTests
         _tokenHasher.Setup(h => h.GenerateRawToken()).Returns("raw-refresh-token");
         _tokenHasher.Setup(h => h.Hash("raw-refresh-token")).Returns("hashed-refresh-token");
 
+        // Act
         var result = await _sut.LoginAsync(dto);
 
+        // Assert
         Assert.Equal("access-token", result.AccessToken);
         Assert.Equal("raw-refresh-token", result.RefreshToken);
         Assert.NotNull(user.LastLoginAt);
@@ -562,6 +643,7 @@ public class UserServiceTests
     [Fact]
     public async Task LoginAsync_ShouldThrow_WhenPasswordIsWrong()
     {
+        // Arrange
         var user = GetUserFaker().Generate();
         var dto = GetLoginDtoFaker(user.Username, "WrongPassword").Generate();
 
@@ -571,7 +653,11 @@ public class UserServiceTests
 
         _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(false);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
+        // Act
+        Task Act() => _sut.LoginAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("Invalid username/email or password.", exception.Message);
 
         _jwtProvider.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
@@ -580,19 +666,25 @@ public class UserServiceTests
     [Fact]
     public async Task LoginAsync_ShouldThrow_WhenUserIsNotFound()
     {
+        // Arrange
         var dto = GetLoginDtoFaker().Generate();
 
         _userRepository
             .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
+        // Act
+        Task Act() => _sut.LoginAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("Invalid username/email or password.", exception.Message);
     }
 
     [Fact]
     public async Task LoginAsync_ShouldThrow_WhenEmailIsNotVerified()
     {
+        // Arrange
         var user = GetUserFaker(isEmailVerified: false).Generate();
         var dto = GetLoginDtoFaker(user.Username).Generate();
 
@@ -602,13 +694,18 @@ public class UserServiceTests
 
         _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(true);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
+        // Act
+        Task Act() => _sut.LoginAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("Please verify your email address before logging in.", exception.Message);
     }
 
     [Fact]
     public async Task LoginAsync_ShouldThrow_WhenAccountIsInactive()
     {
+        // Arrange
         var user = GetUserFaker(isActive: false).Generate();
         var dto = GetLoginDtoFaker(user.Username).Generate();
 
@@ -618,7 +715,11 @@ public class UserServiceTests
 
         _passwordHasher.Setup(h => h.Verify(dto.Password, user.PasswordHash)).Returns(true);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.LoginAsync(dto));
+        // Act
+        Task Act() => _sut.LoginAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("This account has been deactivated. Please contact support.", exception.Message);
     }
 
@@ -627,6 +728,7 @@ public class UserServiceTests
     [Fact]
     public async Task RefreshAsync_ShouldSucceed_WhenTokenIsValidAndNotExpiredOrRevoked()
     {
+        // Arrange
         const string oldHash = "old-hash";
         const string newRawToken = "new-raw-token";
         const string newHash = "new-hash";
@@ -652,8 +754,10 @@ public class UserServiceTests
         _tokenHasher.Setup(h => h.GenerateRawToken()).Returns(newRawToken);
         _tokenHasher.Setup(h => h.Hash(newRawToken)).Returns(newHash);
 
+        // Act
         var result = await _sut.RefreshAsync(dto);
 
+        // Assert
         Assert.Equal("new-access-token", result.AccessToken);
         Assert.Equal(newRawToken, result.RefreshToken);
         Assert.Equal(newHash, storedToken.ReplacedByTokenHash);
@@ -665,6 +769,7 @@ public class UserServiceTests
     [Fact]
     public async Task RefreshAsync_ShouldThrow_WhenTokenIsNotFound()
     {
+        // Arrange
         var dto = new RefreshTokenRequestDto { RefreshToken = "unknown-raw-token" };
 
         _tokenHasher.Setup(h => h.Hash(dto.RefreshToken)).Returns("unknown-hash");
@@ -673,13 +778,18 @@ public class UserServiceTests
             .Setup(r => r.GetByTokenHashAsync("unknown-hash", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RefreshToken?)null);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync(dto));
+        // Act
+        Task Act() => _sut.RefreshAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("Invalid refresh token.", exception.Message);
     }
 
     [Fact]
     public async Task RefreshAsync_ShouldRevokeAllActiveTokens_WhenAnAlreadyRevokedTokenIsReused()
     {
+        // Arrange
         const string tokenHash = "reused-hash";
         var dto = new RefreshTokenRequestDto { RefreshToken = "reused-raw-token" };
 
@@ -701,7 +811,11 @@ public class UserServiceTests
             .Setup(r => r.Revoke(It.IsAny<RefreshToken>()))
             .Callback<RefreshToken>(token => token.RevokedAt = DateTime.UtcNow);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync(dto));
+        // Act
+        Task Act() => _sut.RefreshAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("This session is no longer valid. Please log in again.", exception.Message);
 
         Assert.NotNull(otherActiveToken.RevokedAt);
@@ -711,6 +825,7 @@ public class UserServiceTests
     [Fact]
     public async Task RefreshAsync_ShouldThrow_WhenTokenIsExpired()
     {
+        // Arrange
         const string tokenHash = "expired-hash";
         var dto = new RefreshTokenRequestDto { RefreshToken = "expired-raw-token" };
 
@@ -722,7 +837,11 @@ public class UserServiceTests
             .Setup(r => r.GetByTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(storedToken);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(() => _sut.RefreshAsync(dto));
+        // Act
+        Task Act() => _sut.RefreshAsync(dto);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<DomainException>(Act);
         Assert.Equal("This session has expired. Please log in again.", exception.Message);
     }
 
@@ -731,6 +850,7 @@ public class UserServiceTests
     [Fact]
     public async Task LogoutAsync_ShouldRevokeToken_WhenTokenIsValidAndNotRevoked()
     {
+        // Arrange
         const string tokenHash = "valid-hash";
         var dto = new LogoutDto { RefreshToken = "raw-token" };
         var storedToken = GetRefreshTokenFaker(tokenHash: tokenHash).Generate();
@@ -745,8 +865,10 @@ public class UserServiceTests
             .Setup(r => r.Revoke(It.IsAny<RefreshToken>()))
             .Callback<RefreshToken>(token => token.RevokedAt = DateTime.UtcNow);
 
+        // Act
         await _sut.LogoutAsync(dto);
 
+        // Assert
         Assert.NotNull(storedToken.RevokedAt);
         _refreshTokenRepository.Verify(r => r.Revoke(It.IsAny<RefreshToken>()), Times.Once);
     }
@@ -754,6 +876,7 @@ public class UserServiceTests
     [Fact]
     public async Task LogoutAsync_ShouldDoNothing_WhenTokenIsNotFound()
     {
+        // Arrange
         var dto = new LogoutDto { RefreshToken = "unknown-raw-token" };
 
         _tokenHasher.Setup(h => h.Hash(dto.RefreshToken)).Returns("unknown-hash");
@@ -762,14 +885,17 @@ public class UserServiceTests
             .Setup(r => r.GetByTokenHashAsync("unknown-hash", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RefreshToken?)null);
 
+        // Act
         await _sut.LogoutAsync(dto);
 
+        // Assert
         _refreshTokenRepository.Verify(r => r.Revoke(It.IsAny<RefreshToken>()), Times.Never);
     }
 
     [Fact]
     public async Task LogoutAsync_ShouldDoNothing_WhenTokenIsAlreadyRevoked()
     {
+        // Arrange
         const string tokenHash = "already-revoked-hash";
         var dto = new LogoutDto { RefreshToken = "raw-token" };
 
@@ -781,8 +907,10 @@ public class UserServiceTests
             .Setup(r => r.GetByTokenHashAsync(tokenHash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(storedToken);
 
+        // Act
         await _sut.LogoutAsync(dto);
 
+        // Assert
         _refreshTokenRepository.Verify(r => r.Revoke(It.IsAny<RefreshToken>()), Times.Never);
     }
 
