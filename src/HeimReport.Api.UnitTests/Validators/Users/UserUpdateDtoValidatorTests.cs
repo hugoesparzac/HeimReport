@@ -29,4 +29,113 @@ public class UserUpdateDtoValidatorTests
 
         return context;
     }
+
+    // ===================== ROLE ASSIGNMENT POLICY =====================
+
+    [Fact]
+    public void ShouldNotHaveError_WhenAdminAssignsAdminRole()
+    {
+        // Arrange
+        var dto = ValidDto(role: SystemRole.Admin);
+        var context = BuildContext(dto, requesterRole: SystemRole.Admin);
+
+        // Act
+        var result = _sut.TestValidate(context);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.Role);
+    }
+
+    [Fact]
+    public void ShouldHaveError_WhenHRAttemptsToAssignAdminRole()
+    {
+        // Arrange
+        var dto = ValidDto(role: SystemRole.Admin);
+        var context = BuildContext(dto, requesterRole: SystemRole.HR);
+
+        // Act
+        var result = _sut.TestValidate(context);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Role)
+            .WithErrorMessage("You are not allowed to assign this role");
+    }
+
+    [Theory]
+    [InlineData(SystemRole.Employee)]
+    [InlineData(SystemRole.HR)]
+    public void ShouldNotHaveError_WhenHRAssignsEmployeeOrHRRole(SystemRole targetRole)
+    {
+        // Arrange
+        var dto = ValidDto(role: targetRole);
+        var context = BuildContext(dto, requesterRole: SystemRole.HR);
+
+        // Act
+        var result = _sut.TestValidate(context);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.Role);
+    }
+
+    [Fact]
+    public void ShouldHaveError_WhenEmployeeAttemptsToAssignAnyRole()
+    {
+        // Arrange
+        var dto = ValidDto(role: SystemRole.Employee);
+        var context = BuildContext(dto, requesterRole: SystemRole.Employee);
+
+        // Act
+        var result = _sut.TestValidate(context);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Role)
+            .WithErrorMessage("You are not allowed to assign this role");
+    }
+
+    [Fact]
+    public void ShouldHaveError_WhenRequesterRoleIsMissingFromRootContextData()
+    {
+        // Arrange
+        var dto = ValidDto(role: SystemRole.Employee);
+        var context = BuildContext(dto, requesterRole: null);
+
+        // Act
+        var result = _sut.TestValidate(context);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Role)
+            .WithErrorMessage("You are not allowed to assign this role");
+    }
+
+    [Fact]
+    public void ShouldHaveError_WhenRoleIsInvalidEnumValue()
+    {
+        // Arrange
+        var dto = ValidDto(role: (SystemRole)999);
+        var context = BuildContext(dto);
+
+        // Act
+        var result = _sut.TestValidate(context);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Role)
+            .WithErrorMessage("Invalid role");
+    }
+
+    // ===================== PREFERRED LANGUAGE =====================
+
+    [Fact]
+    public void ShouldHaveError_WhenPreferredLanguageIsInvalidEnumValue()
+    {
+        // Arrange
+        var dto = new UserUpdateDto { Role = SystemRole.Employee, IsActive = true, PreferredLanguage = (Language)999 };
+        var context = BuildContext(dto);
+
+        // Act
+        var result = _sut.TestValidate(context);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.PreferredLanguage)
+            .WithErrorMessage("Invalid preferred language");
+    }
 }
