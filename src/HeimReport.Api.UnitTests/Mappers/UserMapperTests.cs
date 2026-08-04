@@ -71,7 +71,7 @@ public class UserMapperTests
         Assert.DoesNotContain("PasswordHash", dtoProperties);
     }
 
-    // ===================== DEFENSIVE CHECK: INCLUDE FALTANTE =====================
+    // ===================== DEFENSIVE CHECK: INCLUDE MISSING =====================
 
     [Fact]
     public void ToResponseDto_ShouldThrow_WhenEmployeeIsNotLoaded()
